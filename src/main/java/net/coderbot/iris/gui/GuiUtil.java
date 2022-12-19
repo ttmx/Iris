@@ -1,10 +1,17 @@
 package net.coderbot.iris.gui;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.BufferUploader;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.Tesselator;
+import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.math.Matrix4f;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiComponent;
+import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
@@ -13,6 +20,9 @@ import net.minecraft.network.chat.TextComponent;
 import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
+
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
 
 /**
  * Class serving as abstraction and
@@ -89,8 +99,22 @@ public final class GuiUtil {
 	 * @param height The height of the panel
 	 */
 	public static void drawPanel(PoseStack poseStack, int x, int y, int width, int height) {
+		drawPanel(poseStack, x, y, width, height, 0xDE);
+	}
+
+	/**
+	 * Draws a black panel with a light border
+	 * and specified translucency.
+	 *
+	 * @param x The x position of the panel
+	 * @param y The y position of the panel
+	 * @param width The width of the panel
+	 * @param height The height of the panel
+	 * @param alpha The translucency of the panel from 0 to 255
+	 */
+	public static void drawPanel(PoseStack poseStack, int x, int y, int width, int height, int alpha) {
 		int borderColor = 0xDEDEDEDE;
-		int innerColor = 0xDE000000;
+		int innerColor = alpha << 24;
 
 		// Top border section
 		GuiComponent.fill(poseStack, x, y, x + width, y + 1, borderColor);
@@ -114,6 +138,71 @@ public final class GuiUtil {
 	public static void drawTextPanel(Font font, PoseStack poseStack, Component text, int x, int y) {
 		drawPanel(poseStack, x, y, font.width(text) + 8, 16);
 		font.drawShadow(poseStack, text, x + 4, y + 4, 0xFFFFFF);
+	}
+
+	/**
+	 * Draws a texture such that it will fit inside a box of defined
+	 * width and height, while preserving the texture's aspect ratio.
+	 *
+	 * @param x The x position of the left edge of the quad
+	 * @param y The y position of the top edge of the quad
+	 * @param width The width of the bounding area to draw in
+	 * @param height The height of the bounding area to draw in
+	 * @param aspectRatio The aspect ratio of the texture being drawn - width / height
+	 */
+	public static void drawTextureInside(PoseStack poseStack, float x, float y, float width, float height, double aspectRatio) {
+		float areaRatio = width / height;
+		float quadWidth = aspectRatio > areaRatio ? width : (float) (height * aspectRatio);
+		float quadHeight = aspectRatio < areaRatio ? height : (float) (width / aspectRatio);
+
+		drawTexture(poseStack,
+			x + (width / 2) - (quadWidth / 2), y + (height / 2) - (quadHeight / 2),
+			quadWidth, quadHeight, 0, 0, 1, 1);
+	}
+
+	/**
+	 * Draws a texture using floating-point specified coordinates.
+	 *
+	 * @param x The x position of the left edge of the quad
+	 * @param y The y position of the top edge of the quad
+	 * @param width The width of the quad
+	 * @param height The height of the quad
+	 * @param u0 The left edge of the texture section (0-1)
+	 * @param v0 The top edge of the texture section (0-1)
+	 * @param u1 The right edge of the texture section (0-1)
+	 * @param v1 The bottom edge of the texture section (0-1)
+	 */
+	public static void drawTexture(PoseStack poseStack, float x, float y, float width, float height,
+								   float u0, float v0, float u1, float v1) {
+		RenderSystem.setShader(GameRenderer::getPositionTexShader);
+		BufferBuilder buffer = Tesselator.getInstance().getBuilder();
+		Matrix4f pose = poseStack.last().pose();
+
+		buffer.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
+		buffer.vertex(pose, x, y + height, 0).uv(u0, v1).endVertex();
+		buffer.vertex(pose, x + width, y + height, 0).uv(u1, v1).endVertex();
+		buffer.vertex(pose, x + width, y, 0).uv(u1, v0).endVertex();
+		buffer.vertex(pose, x, y, 0).uv(u0, v0).endVertex();
+		buffer.end();
+		BufferUploader.end(buffer);
+	}
+
+	/**
+	 * Draws a 10px by 11px loading animation at the specified coordinates.
+	 *
+	 * @param x The x position of the left edge of the animation
+	 * @param y The y position of the top edge of the animation
+	 */
+	public static void drawLoadingAnimation(PoseStack poseStack, int x, int y) {
+		// The number being used to mask the system time has 9 bits, meaning it cycles every 512 ms
+		// By shifting the masked system time right 6 bits, it will cycle through numbers 0-7 every half second or so
+		// Fast and easy way to make an animation timer with 8 frames
+		int frame = (int) (System.currentTimeMillis() & 0b111000000) >> 6;
+
+		RenderSystem.enableBlend();
+		RenderSystem.enableTexture();
+		bindIrisWidgetsTexture();
+		GuiComponent.blit(poseStack, x, y, 10 * frame, 245, 10, 11, 256, 256);
 	}
 
 	/**
@@ -152,6 +241,28 @@ public final class GuiUtil {
 	}
 
 	/**
+	 * Truncates a number if greater than 1000 and adds a suffix.
+	 * Each suffix corresponds to 1000 to the power of the suffix's index.
+	 *
+	 * <p>Example: {@code number = 5249, suffixes = ["KB", "MB", "GB"]; returns "5.2KB"}
+	 *
+	 * @param number The number to truncate
+	 * @param suffixes A list of suffixes corresponding to powers of 1000; may be empty
+	 * @return a string representing the truncated number
+	 */
+	public static String truncateNumber(int number, String[] suffixes) {
+		if (number < 1000) {
+			return Integer.toString(number);
+		}
+
+		int powerOf1K = (int) (Math.log(Math.abs(number)) / Math.log(1000));
+		String significand = new DecimalFormat("0.#")
+			.format((double) number / Math.pow(1000, powerOf1K));
+
+		return significand + (powerOf1K <= suffixes.length ? suffixes[powerOf1K - 1] : "");
+	}
+
+	/**
 	 * Plays the {@code UI_BUTTON_CLICK} sound event as a
 	 * master sound effect.
 	 *
@@ -168,12 +279,22 @@ public final class GuiUtil {
 	 */
 	public static class Icon {
 		public static final Icon SEARCH = new Icon(0, 0, 7, 8);
+		public static final Icon SEARCH_COLORED = new Icon(0, 8, 7, 8);
 		public static final Icon CLOSE = new Icon(7, 0, 5, 6);
+		public static final Icon CLOSE_COLORED = new Icon(7, 6, 5, 6);
 		public static final Icon REFRESH = new Icon(12, 0, 10, 10);
 		public static final Icon EXPORT = new Icon(22, 0, 7, 8);
 		public static final Icon EXPORT_COLORED = new Icon(29, 0, 7, 8);
 		public static final Icon IMPORT = new Icon(22, 8, 7, 8);
 		public static final Icon IMPORT_COLORED = new Icon(29, 8, 7, 8);
+		public static final Icon EXPLORE = new Icon(36, 0, 10, 10);
+		public static final Icon EXPLORE_COLORED = new Icon(46, 0, 10, 10);
+		public static final Icon REFRESH_SMALL = new Icon(36, 10, 7, 8);
+		public static final Icon REFRESH_SMALL_COLORED = new Icon(43, 10, 7, 8);
+		public static final Icon LEFT = new Icon(12, 10, 4, 8);
+		public static final Icon RIGHT = new Icon(16, 10, 4, 8);
+		public static final Icon CAMERA = new Icon(0, 16, 8, 7);
+		public static final Icon CAMERA_COLORED = new Icon(0, 23, 8, 7);
 
 		private final int u;
 		private final int v;

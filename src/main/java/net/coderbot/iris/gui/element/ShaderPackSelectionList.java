@@ -4,6 +4,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import net.coderbot.iris.Iris;
 import net.coderbot.iris.gui.GuiUtil;
 import net.coderbot.iris.gui.screen.ShaderPackScreen;
+import net.coderbot.iris.gui.screen.browser.ExternalPackBrowserScreen;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -242,14 +243,16 @@ public class ShaderPackSelectionList extends IrisObjectSelectionList<ShaderPackS
 
 	public static class TopButtonRowEntry extends BaseEntry {
 		private static final Component REFRESH_SHADER_PACKS_LABEL = new TranslatableComponent("options.iris.refreshShaderPacks").withStyle(style -> style.withColor(TextColor.fromRgb(0x99ceff)));
+		private static final Component EXPLORE_SHADER_PACKS_LABEL = new TranslatableComponent("options.iris.exploreShaderPacks").withStyle(style -> style.withColor(TextColor.fromRgb(0xffb300)));
 		private static final Component NONE_PRESENT_LABEL = new TranslatableComponent("options.iris.shaders.nonePresent").withStyle(ChatFormatting.GRAY);
 		private static final Component SHADERS_DISABLED_LABEL = new TranslatableComponent("options.iris.shaders.disabled");
 		private static final Component SHADERS_ENABLED_LABEL = new TranslatableComponent("options.iris.shaders.enabled");
-		private static final int REFRESH_BUTTON_WIDTH = 18;
+		private static final int SIDE_BUTTON_WIDTH = 18;
 
 		private final ShaderPackSelectionList list;
 		private final IrisElementRow buttons = new IrisElementRow();
 		private final EnableShadersButtonElement enableDisableButton;
+		private final IrisElementRow.Element explorePacksButton;
 		private final IrisElementRow.Element refreshPacksButton;
 
 		public boolean allowEnableShadersButton = true;
@@ -258,6 +261,14 @@ public class ShaderPackSelectionList extends IrisObjectSelectionList<ShaderPackS
 		public TopButtonRowEntry(ShaderPackSelectionList list, boolean shadersEnabled) {
 			this.list = list;
 			this.shadersEnabled = shadersEnabled;
+			this.explorePacksButton = new IrisElementRow.IconButtonElement(
+				GuiUtil.Icon.EXPLORE, GuiUtil.Icon.EXPLORE_COLORED,
+				button -> {
+					GuiUtil.playButtonClickSound();
+					Minecraft.getInstance().setScreen(new ExternalPackBrowserScreen(list.screen));
+
+					return true;
+				});
 			this.enableDisableButton = new EnableShadersButtonElement(
 					getEnableDisableLabel(),
 					button -> {
@@ -277,7 +288,9 @@ public class ShaderPackSelectionList extends IrisObjectSelectionList<ShaderPackS
 						GuiUtil.playButtonClickSound();
 						return true;
 					});
-			this.buttons.add(this.enableDisableButton, 0).add(this.refreshPacksButton, REFRESH_BUTTON_WIDTH);
+			this.buttons.add(this.explorePacksButton, SIDE_BUTTON_WIDTH)
+				.add(this.enableDisableButton, 0)
+				.add(this.refreshPacksButton, SIDE_BUTTON_WIDTH);
 		}
 
 		public void setShadersEnabled(boolean shadersEnabled) {
@@ -288,15 +301,20 @@ public class ShaderPackSelectionList extends IrisObjectSelectionList<ShaderPackS
 
 		@Override
 		public void render(PoseStack poseStack, int index, int y, int x, int entryWidth, int entryHeight, int mouseX, int mouseY, boolean hovered, float tickDelta) {
-			this.buttons.setWidth(this.enableDisableButton, (entryWidth - 1) - REFRESH_BUTTON_WIDTH);
+			this.buttons.setWidth(this.enableDisableButton, (entryWidth - 1) - (2 * SIDE_BUTTON_WIDTH + 1));
 			this.enableDisableButton.centerX = x + (int)(entryWidth * 0.5);
 
 			this.buttons.render(poseStack, x - 2, y - 3, 18, mouseX, mouseY, tickDelta, hovered);
 
+			if (this.explorePacksButton.isHovered()) {
+				ShaderPackScreen.TOP_LAYER_RENDER_QUEUE.add(() ->
+						GuiUtil.drawTextPanel(Minecraft.getInstance().font, poseStack, EXPLORE_SHADER_PACKS_LABEL,
+								mouseX, mouseY - 16));
+			}
 			if (this.refreshPacksButton.isHovered()) {
 				ShaderPackScreen.TOP_LAYER_RENDER_QUEUE.add(() ->
-						GuiUtil.drawTextPanel(Minecraft.getInstance().font, poseStack, REFRESH_SHADER_PACKS_LABEL,
-								(mouseX - 8) - Minecraft.getInstance().font.width(REFRESH_SHADER_PACKS_LABEL), mouseY - 16));
+					GuiUtil.drawTextPanel(Minecraft.getInstance().font, poseStack, REFRESH_SHADER_PACKS_LABEL,
+						(mouseX - 8) - Minecraft.getInstance().font.width(REFRESH_SHADER_PACKS_LABEL), mouseY - 16));
 			}
 		}
 
