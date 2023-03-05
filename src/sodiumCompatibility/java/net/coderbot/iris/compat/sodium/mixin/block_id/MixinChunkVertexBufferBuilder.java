@@ -22,9 +22,9 @@ public class MixinChunkVertexBufferBuilder implements ContextAwareVertexWriter {
 	}
 
 	@Override
-	public void flipUpcomingQuadNormal() {
+	public void iris$setQuadInfo(int normal, int tangent, float midTexCoordX, float midTexCoordY) {
 		if (encoder instanceof ContextAwareVertexWriter) {
-			((ContextAwareVertexWriter) encoder).flipUpcomingQuadNormal();
+			((ContextAwareVertexWriter) encoder).iris$setQuadInfo(normal, tangent, midTexCoordX, midTexCoordY);
 		}
 	}
 }

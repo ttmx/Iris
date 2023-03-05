@@ -3,6 +3,7 @@ package net.coderbot.iris.compat.sodium.mixin.block_id;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Reference2ReferenceOpenHashMap;
 import me.jellysquid.mods.sodium.client.SodiumClientMod;
+import me.jellysquid.mods.sodium.client.model.quad.properties.ModelQuadFacing;
 import me.jellysquid.mods.sodium.client.render.chunk.compile.ChunkBuildBuffers;
 import me.jellysquid.mods.sodium.client.render.chunk.compile.buffers.BakedChunkModelBuilder;
 import me.jellysquid.mods.sodium.client.render.chunk.terrain.TerrainRenderPass;
@@ -47,8 +48,10 @@ public class MixinChunkBuildBuffers implements ChunkBuildBuffersExt {
 	@Inject(method = "<init>", remap = false, at = @At(value = "TAIL", remap = false))
 	private void iris$redirectWriterCreation(ChunkVertexType vertexType, CallbackInfo ci) {
 		for (BakedChunkModelBuilder builder : this.builders.values()) {
-			if (builder.getVertexBuffer() instanceof ContextAwareVertexWriter) {
-				((ContextAwareVertexWriter) builder.getVertexBuffer()).iris$setContextHolder(contextHolder);
+			for (ModelQuadFacing facing : ModelQuadFacing.VALUES) {
+				if (builder.getVertexBuffer(facing) instanceof ContextAwareVertexWriter) {
+					((ContextAwareVertexWriter) builder.getVertexBuffer(facing)).iris$setContextHolder(contextHolder);
+				}
 			}
 		}
 	}
