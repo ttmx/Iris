@@ -2,6 +2,7 @@ package net.coderbot.iris.gl;
 
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.VertexSorting;
 import net.coderbot.iris.Iris;
 import net.coderbot.iris.gl.sampler.GlSampler;
 import net.coderbot.iris.gl.sampler.SamplerLimits;
@@ -42,6 +43,7 @@ public class IrisRenderSystem {
 	private static boolean hasMultibind;
 	private static boolean supportsCompute;
 	private static int[] samplers;
+	private static VertexSorting backupVertexSorting;
 
 	public static void initRenderer() {
 		if (GL.getCapabilities().OpenGL45) {
@@ -329,12 +331,14 @@ public class IrisRenderSystem {
 
 	public static void setShadowProjection(Matrix4f shadowProjection) {
 		backupProjection = RenderSystem.getProjectionMatrix();
-		RenderSystem.setProjectionMatrix(shadowProjection);
+		backupVertexSorting = RenderSystem.getVertexSorting();
+		RenderSystem.setProjectionMatrix(shadowProjection, VertexSorting.ORTHOGRAPHIC_Z);
 	}
 
 	public static void restorePlayerProjection() {
-		RenderSystem.setProjectionMatrix(backupProjection);
+		RenderSystem.setProjectionMatrix(backupProjection, backupVertexSorting);
 		backupProjection = null;
+		backupVertexSorting = null;
 	}
 
 	public static void blitFramebuffer(int source, int dest, int offsetX, int offsetY, int width, int height, int offsetX2, int offsetY2, int width2, int height2, int bufferChoice, int filter) {
