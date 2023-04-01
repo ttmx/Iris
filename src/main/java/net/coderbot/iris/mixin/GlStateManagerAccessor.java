@@ -16,6 +16,11 @@ public interface GlStateManagerAccessor {
 		throw new UnsupportedOperationException("Not accessed");
 	}
 
+	@Accessor("STENCIL")
+	static GlStateManager.StencilState getSTENCIL() {
+		throw new UnsupportedOperationException("Not accessed");
+	}
+
 	@Accessor("DEPTH")
 	static GlStateManager.DepthState getDEPTH() {
 		throw new UnsupportedOperationException("Not accessed");

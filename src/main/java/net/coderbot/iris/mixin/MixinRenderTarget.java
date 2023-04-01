@@ -15,7 +15,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(RenderTarget.class)
 public class MixinRenderTarget implements Blaze3dRenderTargetExt {
 	@Shadow
-	private int depthBufferId;
+	private int depthStencilBufferId;
 
 	private int iris$depthBufferVersion;
 	private int iris$colorBufferVersion;

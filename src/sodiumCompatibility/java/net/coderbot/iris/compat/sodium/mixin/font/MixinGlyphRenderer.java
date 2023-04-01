@@ -56,7 +56,7 @@ public class MixinGlyphRenderer {
 	 * @author JellySquid
 	 */
 	@Overwrite
-	public void render(boolean italic, float x, float y, Matrix4f matrix, VertexConsumer vertexConsumer, float red, float green, float blue, float alpha, int light) {
+	public void render(boolean reversed, boolean italic, float x, float y, Matrix4f matrix, VertexConsumer vertexConsumer, float red, float green, float blue, float alpha, int light) {
 		float x1 = x + this.left;
 		float x2 = x + this.right;
 		float y1 = this.up - 3.0F;
@@ -76,16 +76,16 @@ public class MixinGlyphRenderer {
 			long buffer = stack.nmalloc(4 * stride);
 			long ptr = buffer;
 
-			write(ext, ptr, matrix, x1 + w1, h1, 0.0F, color, this.u0, this.v0, light);
+			write(ext, ptr, matrix, x1 + w1, h1, 0.0F, color, (reversed ? this.u1 : this.u0), this.v0, light);
 			ptr += stride;
 
-			write(ext, ptr, matrix, x1 + w2, h2, 0.0F, color, this.u0, this.v1, light);
+			write(ext, ptr, matrix, x1 + w2, h2, 0.0F, color, (reversed ? this.u1 : this.u0), this.v1, light);
 			ptr += stride;
 
-			write(ext, ptr, matrix, x2 + w2, h2, 0.0F, color, this.u1, this.v1, light);
+			write(ext, ptr, matrix, x2 + w2, h2, 0.0F, color, (reversed ? this.u0 : this.u1), this.v1, light);
 			ptr += stride;
 
-			write(ext, ptr, matrix, x2 + w1, h1, 0.0F, color, this.u1, this.v0, light);
+			write(ext, ptr, matrix, x2 + w1, h1, 0.0F, color, (reversed ? this.u0 : this.u1), this.v0, light);
 			ptr += stride;
 
 			writer.push(stack, buffer, 4, ext ? GlyphVertexExt.FORMAT : GlyphVertex.FORMAT);
