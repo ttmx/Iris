@@ -87,7 +87,7 @@ public class SegmentedBufferBuilder implements MultiBufferSource, MemoryTracking
 			currentType = null;
 		}
 
-		List<BufferSegment> finalSegments = buffers.stream().filter(bufferSegment -> ((BlendingStateHolder) bufferSegment.type()).getTransparencyType() == transparencyType).toList();
+		List<BufferSegment> finalSegments = buffers.stream().filter(segment -> ((BlendingStateHolder) segment.type()).getTransparencyType() == transparencyType).toList();
 
 		buffers.removeAll(finalSegments);
 
