@@ -7,13 +7,14 @@ import org.spongepowered.asm.mixin.Mixin;
 
 @Mixin(NonCullingFrustum.class)
 public class MixinNonCullingFrustum implements Frustum, FrustumAdapter {
-	@Override
-	public Visibility testBox(float minX, float minY, float minZ, float maxX, float maxY, float maxZ) {
-		return Visibility.INSIDE;
-	}
 
 	@Override
 	public Frustum sodium$createFrustum() {
 		return this;
+	}
+
+	@Override
+	public boolean testBox(double v, double v1, double v2, double v3, double v4, double v5) {
+		return true;
 	}
 }

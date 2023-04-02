@@ -9,7 +9,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
-@Mixin(RenderRegion.class)
+@Mixin(RenderRegion.Resources.class)
 public class MixinRenderRegionArenas {
 	@Redirect(method = "<init>", remap = false,
 			at = @At(value = "FIELD",

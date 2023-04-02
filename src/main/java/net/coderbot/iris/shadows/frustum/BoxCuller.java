@@ -26,11 +26,11 @@ public class BoxCuller {
 	}
 
 	public boolean isCulled(AABB aabb) {
-		return isCulled((float) aabb.minX, (float) aabb.minY, (float) aabb.minZ,
-				(float) aabb.maxX, (float) aabb.maxY, (float) aabb.maxZ);
+		return isCulled(aabb.minX, aabb.minY, aabb.minZ,
+				aabb.maxX, aabb.maxY, aabb.maxZ);
 	}
 
-	public boolean isCulled(float minX, float minY, float minZ, float maxX, float maxY, float maxZ) {
+	public boolean isCulled(double minX, double minY, double minZ, double maxX, double maxY, double maxZ) {
 		if (maxX < this.minAllowedX || minX > this.maxAllowedX) {
 			return true;
 		}

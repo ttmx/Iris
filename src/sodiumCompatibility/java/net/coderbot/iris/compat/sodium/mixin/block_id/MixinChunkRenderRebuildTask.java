@@ -5,8 +5,7 @@ import me.jellysquid.mods.sodium.client.render.chunk.compile.ChunkBuildBuffers;
 import me.jellysquid.mods.sodium.client.render.chunk.compile.ChunkBuildResult;
 import me.jellysquid.mods.sodium.client.render.chunk.compile.pipeline.BlockRenderCache;
 import me.jellysquid.mods.sodium.client.render.chunk.compile.pipeline.BlockRenderContext;
-import me.jellysquid.mods.sodium.client.render.chunk.data.ChunkRenderBounds;
-import me.jellysquid.mods.sodium.client.render.chunk.data.ChunkRenderData;
+import me.jellysquid.mods.sodium.client.render.chunk.data.BuiltSectionInfo;
 import me.jellysquid.mods.sodium.client.render.chunk.tasks.ChunkRenderRebuildTask;
 import me.jellysquid.mods.sodium.client.util.task.CancellationSource;
 import me.jellysquid.mods.sodium.client.world.WorldSlice;
@@ -36,7 +35,7 @@ public class MixinChunkRenderRebuildTask {
 			locals = LocalCapture.CAPTURE_FAILHARD)
 	private void iris$setLocalPos(ChunkBuildContext context,
 								  CancellationSource cancellationSource, CallbackInfoReturnable<ChunkBuildResult> cir,
-								  ChunkRenderData.Builder renderData, VisGraph occluder, ChunkRenderBounds.Builder bounds, ChunkBuildBuffers buffers,
+								  BuiltSectionInfo.Builder renderData, VisGraph occluder, ChunkBuildBuffers buffers,
 								  BlockRenderCache cacheLocal,
 								  WorldSlice slice, int baseX, int baseY, int baseZ, int maxX, int maxY, int maxZ,
 								  BlockPos.MutableBlockPos pos, BlockPos.MutableBlockPos renderOffset, BlockRenderContext context2,
