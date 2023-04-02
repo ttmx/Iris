@@ -3,6 +3,7 @@ package net.coderbot.iris.compat.sodium.mixin.vertex_format;
 import me.jellysquid.mods.sodium.client.gl.attribute.GlVertexAttributeBinding;
 import me.jellysquid.mods.sodium.client.gl.attribute.GlVertexFormat;
 import me.jellysquid.mods.sodium.client.gl.device.RenderDevice;
+import me.jellysquid.mods.sodium.client.render.chunk.ChunkCameraContext;
 import me.jellysquid.mods.sodium.client.render.chunk.RegionChunkRenderer;
 import me.jellysquid.mods.sodium.client.render.chunk.ShaderChunkRenderer;
 import me.jellysquid.mods.sodium.client.render.chunk.vertex.format.ChunkMeshAttribute;
@@ -10,13 +11,16 @@ import me.jellysquid.mods.sodium.client.render.chunk.vertex.format.ChunkVertexTy
 import net.coderbot.iris.block_rendering.BlockRenderingSettings;
 import net.coderbot.iris.compat.sodium.impl.IrisChunkShaderBindingPoints;
 import net.coderbot.iris.compat.sodium.impl.vertex_format.IrisChunkMeshAttributes;
+import net.coderbot.iris.shadows.ShadowRenderingState;
 import org.apache.commons.lang3.ArrayUtils;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Mutable;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(RegionChunkRenderer.class)
 public abstract class MixinRegionChunkRenderer extends ShaderChunkRenderer {
@@ -45,5 +49,12 @@ public abstract class MixinRegionChunkRenderer extends ShaderChunkRenderer {
 						vertexFormat.getAttribute(IrisChunkMeshAttributes.NORMAL))
 		);
 		return attributes;
+	}
+
+	@Inject(method = "getForwardFacingPlanes", at = @At("HEAD"), cancellable = true)
+	private static void iris$disableBlockCulling(ChunkCameraContext camera, int x, int y, int z, CallbackInfoReturnable<Integer> cir) {
+		if (ShadowRenderingState.areShadowsCurrentlyBeingRendered()) {
+			cir.setReturnValue(125);
+		}
 	}
 }
