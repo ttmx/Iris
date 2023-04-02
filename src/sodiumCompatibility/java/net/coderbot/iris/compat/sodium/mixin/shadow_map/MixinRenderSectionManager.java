@@ -5,8 +5,10 @@ import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectList;
 import me.jellysquid.mods.sodium.client.gl.device.CommandList;
 import me.jellysquid.mods.sodium.client.render.SodiumWorldRenderer;
+import me.jellysquid.mods.sodium.client.render.chunk.ChunkTracker;
 import me.jellysquid.mods.sodium.client.render.chunk.RenderSection;
 import me.jellysquid.mods.sodium.client.render.chunk.RenderSectionManager;
+import me.jellysquid.mods.sodium.client.render.chunk.graph.GraphSearch;
 import me.jellysquid.mods.sodium.client.render.chunk.lists.ChunkRenderList;
 import me.jellysquid.mods.sodium.client.util.frustum.Frustum;
 import net.coderbot.iris.pipeline.ShadowRenderer;
@@ -38,17 +40,12 @@ public class MixinRenderSectionManager implements SwappableRenderSectionManager 
     @Shadow(remap = false)
     @Final
     @Mutable
-    private ChunkRenderList chunkRenderList;
+    private ChunkRenderList renderList;
 
     @Shadow(remap = false)
     @Final
     @Mutable
-    private ObjectList<RenderSection> tickableChunks;
-
-    @Shadow(remap = false)
-    @Final
-    @Mutable
-    private ObjectList<BlockEntity> visibleBlockEntities;
+	private GraphSearch.GraphSearchPool graphSearchPool;
 
 	@Shadow(remap = false)
 	private boolean needsUpdate;
@@ -57,7 +54,7 @@ public class MixinRenderSectionManager implements SwappableRenderSectionManager 
     private ChunkRenderList chunkRenderListSwap;
 
     @Unique
-    private ObjectList<RenderSection> tickableChunksSwap;
+    private GraphSearch.GraphSearchPool graphSearchPoolSwap;
 
     @Unique
     private ObjectList<BlockEntity> visibleBlockEntitiesSwap;
@@ -69,55 +66,27 @@ public class MixinRenderSectionManager implements SwappableRenderSectionManager 
     private static final ObjectArrayFIFOQueue<?> EMPTY_QUEUE = new ObjectArrayFIFOQueue<>();
 
     @Inject(method = "<init>", at = @At("RETURN"))
-    private void iris$onInit(SodiumWorldRenderer worldRenderer, ClientLevel world, int renderDistance, CommandList commandList, CallbackInfo ci) {
+    private void iris$onInit(SodiumWorldRenderer worldRenderer, ClientLevel world, int renderDistance, ChunkTracker chunkTracker, CommandList commandList, CallbackInfo ci) {
         this.chunkRenderListSwap = null;
-        this.tickableChunksSwap = new ObjectArrayList<>();
+        this.graphSearchPoolSwap = new GraphSearch.GraphSearchPool();
         this.visibleBlockEntitiesSwap = new ObjectArrayList<>();
         this.needsUpdateSwap = true;
     }
 
     @Override
     public void iris$swapVisibilityState() {
-        ChunkRenderList chunkRenderListTmp = chunkRenderList;
-        chunkRenderList = chunkRenderListSwap;
+        ChunkRenderList chunkRenderListTmp = renderList;
+        renderList = chunkRenderListSwap;
         chunkRenderListSwap = chunkRenderListTmp;
 
-        ObjectList<RenderSection> tickableChunksTmp = tickableChunks;
-        tickableChunks = tickableChunksSwap;
-        tickableChunksSwap = tickableChunksTmp;
-
-        ObjectList<BlockEntity> visibleBlockEntitiesTmp = visibleBlockEntities;
-        visibleBlockEntities = visibleBlockEntitiesSwap;
-        visibleBlockEntitiesSwap = visibleBlockEntitiesTmp;
+        GraphSearch.GraphSearchPool graphSearchPoolTmp = graphSearchPool;
+		graphSearchPool = graphSearchPoolSwap;
+		graphSearchPoolSwap = graphSearchPoolTmp;
 
         boolean needsUpdateTmp = needsUpdate;
         needsUpdate = needsUpdateSwap;
         needsUpdateSwap = needsUpdateTmp;
     }
-
-    @Inject(method = "update", at = @At("RETURN"))
-	private void iris$captureVisibleBlockEntities(Camera camera, Frustum frustum, int frame, boolean spectator, CallbackInfo ci) {
-		if (ShadowRenderingState.areShadowsCurrentlyBeingRendered()) {
-			ShadowRenderer.visibleBlockEntities = visibleBlockEntities;
-		}
-	}
-
-	@Inject(method = "schedulePendingUpdates", at = @At("HEAD"), cancellable = true, remap = false)
-	private void iris$noRebuildEnqueueingInShadowPass(RenderSection section, CallbackInfo ci) {
-		if (ShadowRenderingState.areShadowsCurrentlyBeingRendered()) {
-			ci.cancel();
-		}
-	}
-
-	@Redirect(method = "resetLists", remap = false,
-			at = @At(value = "INVOKE", target = "java/util/Collection.iterator ()Ljava/util/Iterator;"))
-	private Iterator<?> iris$noQueueClearingInShadowPass(Collection<?> collection) {
-		if (ShadowRenderingState.areShadowsCurrentlyBeingRendered()) {
-			return Collections.emptyIterator();
-		} else {
-			return collection.iterator();
-		}
-	}
 
 	// TODO: check needsUpdate and needsUpdateSwap patches?
 }
