@@ -6,6 +6,7 @@
   "client": [
     "MixinMinecraft_NoAuthInDev",
     "MixinProfileKeyPairManager",
+    "MixinQuickPlay",
     "MixinSharedConstants_LazyDfu"
   ],
   "injectors": {

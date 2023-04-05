@@ -6,6 +6,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import io.github.coolcrabs.brachyura.compiler.java.JavaCompilation;
 import io.github.coolcrabs.brachyura.compiler.java.JavaCompilationResult;
@@ -17,6 +18,7 @@ import io.github.coolcrabs.brachyura.fabric.FabricModule;
 import io.github.coolcrabs.brachyura.fabric.SimpleFabricProject;
 import io.github.coolcrabs.brachyura.fabric.FabricContext.ModDependencyCollector;
 import io.github.coolcrabs.brachyura.fabric.FabricContext.ModDependencyFlag;
+import io.github.coolcrabs.brachyura.ide.IdeModule;
 import io.github.coolcrabs.brachyura.mappings.Namespaces;
 import io.github.coolcrabs.brachyura.maven.Maven;
 import io.github.coolcrabs.brachyura.maven.MavenId;
@@ -29,6 +31,7 @@ import io.github.coolcrabs.brachyura.processing.sources.ProcessingSponge;
 import io.github.coolcrabs.brachyura.project.java.BuildModule;
 import io.github.coolcrabs.brachyura.util.JvmUtil;
 import io.github.coolcrabs.brachyura.util.Lazy;
+import io.github.coolcrabs.brachyura.util.PathUtil;
 import io.github.coolcrabs.brachyura.util.Util;
 import net.fabricmc.mappingio.MappingReader;
 import net.fabricmc.mappingio.format.MappingFormat;
@@ -42,7 +45,7 @@ import org.eclipse.jgit.lib.Constants;
 public class Buildscript extends SimpleFabricProject {
 	static final boolean SODIUM = true;
 	static final boolean CUSTOM_SODIUM = true;
-	static final String MC_VERSION = "23w12a";
+	static final String MC_VERSION = "23w14a";
 	static final String customSodiumName = "sodium-fabric-mc23w12a-0.4.10+rev.90f4da6.jar";
 
 	private static final String[] SOURCE_SETS = new String[] {
@@ -250,6 +253,52 @@ public class Buildscript extends SimpleFabricProject {
 			} catch (IOException e) {
 				throw Util.sneak(e);
 			}
+		}
+
+		@Override
+		public IdeModule createIdeModule() {
+			Path cwd = PathUtil.resolveAndCreateDir(getModuleRoot(), "run");
+			Lazy<List<Path>> classpath = new Lazy<>(() -> {
+				Path mappingsClasspath = writeMappings4FabricStuff().getParent().getParent();
+				ArrayList<Path> r = new ArrayList<>(context.runtimeDependencies.get().size() + 1);
+				for (JavaJarDependency dependency : context.runtimeDependencies.get()) {
+					r.add(dependency.jar);
+				}
+				r.add(mappingsClasspath);
+				return r;
+			});
+			return new IdeModule.IdeModuleBuilder()
+				.name(getModuleName())
+				.root(getModuleRoot())
+				.javaVersion(getJavaVersion())
+				.dependencies(context.ideDependencies)
+				.sourcePaths(getSrcDirs())
+				.resourcePaths(getResourceDirs())
+				.dependencyModules(getModuleDependencies().stream().map(m -> m.ideModule.get()).collect(Collectors.toList()))
+				.runConfigs(
+					new IdeModule.RunConfigBuilder()
+						.name("Main Menu")
+						.cwd(cwd)
+						.mainClass("net.fabricmc.loader.launch.knot.KnotClient")
+						.classpath(classpath)
+						.resourcePaths(getResourceDirs())
+						.vmArgs(() -> this.ideVmArgs(true))
+						.args(() -> this.ideArgs(true)),
+					new IdeModule.RunConfigBuilder()
+						.name("Into World")
+						.cwd(cwd)
+						.mainClass("net.fabricmc.loader.launch.knot.KnotClient")
+						.classpath(classpath)
+						.resourcePaths(getResourceDirs())
+						.vmArgs(() -> this.ideVmArgs(true))
+						.args(() -> {
+							List<String> args = this.ideArgs(true);
+							args.add("--quickPlaySingleplayer");
+							args.add("New World " + MC_VERSION);
+							return args;
+						})
+				)
+				.build();
 		}
 	}
 }
