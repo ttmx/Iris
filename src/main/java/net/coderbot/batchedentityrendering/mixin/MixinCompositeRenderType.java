@@ -26,12 +26,10 @@ public abstract class MixinCompositeRenderType extends RenderType implements Ble
 	@Inject(method = INIT, at = @At("RETURN"))
 	private void batchedentityrendering$onCompositeInit(String string, VertexFormat vertexFormat, VertexFormat.Mode mode, int i, boolean bl, boolean bl2, CompositeState compositeState, CallbackInfo ci) {
 		RenderStateShard.TransparencyStateShard transparency = ((CompositeStateAccessor) (Object) compositeState).getTransparency();
-		RenderStateShard.OutputStateShard output = ((CompositeStateAccessor) (Object) compositeState).getOutput();
-		boolean isStencil = output == RenderStateShard.STENCIL_SETUP_AND_LEAK || output == RenderStateShard.STENCIL_RENDER_AND_CLEAR;
 
 		if ("water_mask".equals(name)) {
 			transparencyType = TransparencyType.WATER_MASK;
-		} else if ("lines".equals(name) || isStencil) {
+		} else if ("lines".equals(name)) {
 			transparencyType = TransparencyType.LINES;
 		} else if (transparency == RenderStateShardAccessor.getNO_TRANSPARENCY()) {
 			transparencyType = TransparencyType.OPAQUE;
