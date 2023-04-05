@@ -29,6 +29,6 @@ public class SodiumVersionCheck {
 			}
 		}
 
-		return true;
+		return false;
 	}
 }
