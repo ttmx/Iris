@@ -12,6 +12,7 @@ import me.jellysquid.mods.sodium.client.render.chunk.ShaderChunkRenderer;
 import me.jellysquid.mods.sodium.client.render.chunk.passes.BlockRenderPass;
 import me.jellysquid.mods.sodium.client.render.chunk.shader.ChunkShaderInterface;
 import me.jellysquid.mods.sodium.client.render.vertex.type.ChunkVertexType;
+import net.coderbot.iris.Iris;
 import net.coderbot.iris.compat.sodium.impl.shader_overrides.IrisChunkShaderInterface;
 import net.coderbot.iris.compat.sodium.impl.shader_overrides.ShaderChunkRendererExt;
 import net.coderbot.iris.compat.sodium.impl.vertex_format.IrisModelVertexFormats;
@@ -55,22 +56,6 @@ public class MixinShaderChunkRenderer implements ShaderChunkRendererExt {
     private void iris$onInit(RenderDevice device, ChunkVertexType vertexType, CallbackInfo ci) {
         irisChunkProgramOverrides = new IrisChunkProgramOverrides();
     }
-
-	@Redirect(method = "createShader", at = @At(value = "INVOKE", target = "Lme/jellysquid/mods/sodium/client/gl/shader/ShaderLoader;loadShader(Lme/jellysquid/mods/sodium/client/gl/shader/ShaderType;Lnet/minecraft/resources/ResourceLocation;Lme/jellysquid/mods/sodium/client/gl/shader/ShaderConstants;)Lme/jellysquid/mods/sodium/client/gl/shader/GlShader;", ordinal = 0))
-	private GlShader iris$redirectOriginalShader(ShaderType type, ResourceLocation name, ShaderConstants constants) {
-		if (this.vertexType == IrisModelVertexFormats.MODEL_VERTEX_XHFP) {
-			String shader = ShaderLoader.getShaderSource(name);
-			shader = shader.replace("v_LightCoord = _vert_tex_light_coord", "v_LightCoord = (iris_LightmapTextureMatrix * vec4(_vert_tex_light_coord, 0, 1)).xy");
-
-			StringTransformations transformations = new StringTransformations(shader);
-
-			transformations.injectLine(Transformations.InjectionPoint.BEFORE_CODE, "mat4 iris_LightmapTextureMatrix = mat4(vec4(0.00390625, 0.0, 0.0, 0.0), vec4(0.0, 0.00390625, 0.0, 0.0), vec4(0.0, 0.0, 0.00390625, 0.0), vec4(0.03125, 0.03125, 0.03125, 1.0));");
-
-			return new GlShader(type, name, ShaderParser.parseShader(transformations.toString(), constants));
-		} else {
-			return ShaderLoader.loadShader(type, name, constants);
-		}
-	}
 
 	@Inject(method = "begin", at = @At("HEAD"), cancellable = true, remap = false)
 	private void iris$begin(BlockRenderPass pass, CallbackInfo ci) {

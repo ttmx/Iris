@@ -223,8 +223,6 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, CoreWo
 			}
 		});
 
-		this.shadowComputes = createShadowComputes(programSet.getShadowCompute(), programSet);
-
 		this.renderTargets = new RenderTargets(main.width, main.height, depthTextureId, ((Blaze3dRenderTargetExt) main).iris$getDepthBufferVersion(), depthBufferFormat, programSet.getPackDirectives().getRenderTargetDirectives().getRenderTargetSettings(), programSet.getPackDirectives());
 		this.sunPathRotation = programSet.getPackDirectives().getSunPathRotation();
 
@@ -283,6 +281,8 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, CoreWo
 				IrisRenderSystem.bindBufferBase(GL43C.GL_SHADER_STORAGE_BUFFER, i, 0);
 			}
 		}
+
+		this.shadowComputes = createShadowComputes(programSet.getShadowCompute(), programSet);
 
 		this.beginRenderer = new CompositeRenderer(this, programSet.getPackDirectives(), programSet.getBegin(), programSet.getBeginCompute(), renderTargets,
 			customTextureManager.getNoiseTexture(), updateNotifier, centerDepthSampler, flipper, shadowTargetsSupplier, TextureStage.BEGIN,
@@ -434,9 +434,11 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, CoreWo
 		BlockRenderingSettings.INSTANCE.setBlockTypeIds(BlockMaterialMapping.createBlockTypeMap(programSet.getPack().getIdMap().getBlockRenderTypeMap()));
 
 		BlockRenderingSettings.INSTANCE.setEntityIds(programSet.getPack().getIdMap().getEntityIdMap());
+		BlockRenderingSettings.INSTANCE.setItemIds(programSet.getPack().getIdMap().getItemIdMap());
 		BlockRenderingSettings.INSTANCE.setAmbientOcclusionLevel(programSet.getPackDirectives().getAmbientOcclusionLevel());
 		BlockRenderingSettings.INSTANCE.setDisableDirectionalShading(shouldDisableDirectionalShading());
 		BlockRenderingSettings.INSTANCE.setUseSeparateAo(programSet.getPackDirectives().shouldUseSeparateAo());
+		BlockRenderingSettings.INSTANCE.setVoxelizeLightBlocks(programSet.getPackDirectives().shouldVoxelizeLightBlocks());
 		BlockRenderingSettings.INSTANCE.setSeparateEntityDraws(programSet.getPackDirectives().shouldUseSeparateEntityDraws());
 		BlockRenderingSettings.INSTANCE.setUseExtendedVertexFormat(true);
 
@@ -730,6 +732,7 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, CoreWo
 		IrisSamplers.addRenderTargetSamplers(samplerHolder, flipped, renderTargets, false);
 		IrisSamplers.addCustomTextures(samplerHolder, customTextureManager.getIrisCustomTextures());
 		IrisImages.addRenderTargetImages(images, flipped, renderTargets);
+		IrisImages.addCustomImages(images, customImages);
 
 		if (!shouldBindPBR) {
 			shouldBindPBR = IrisSamplers.hasPBRSamplers(samplerHolder);
@@ -738,6 +741,7 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, CoreWo
 		IrisSamplers.addLevelSamplers(samplers, this, whitePixel, availability);
 		IrisSamplers.addWorldDepthSamplers(samplerHolder, this.renderTargets);
 		IrisSamplers.addNoiseSampler(samplerHolder, this.customTextureManager.getNoiseTexture());
+		IrisSamplers.addCustomImages(samplerHolder, customImages);
 
 		if (isShadowPass || IrisSamplers.hasShadowSamplers(samplerHolder)) {
 			if (!isShadowPass) {

@@ -18,6 +18,7 @@ public class VanillaTransformer {
 		// attribute inserted by this
 		if (parameters.inputs.hasOverlay()) {
 			AttributeTransformer.patchOverlayColor(t, tree, root, parameters);
+			AttributeTransformer.patchEntityId(t, tree, root, parameters);
 		}
 
 		CommonTransformer.transform(t, tree, root, parameters, false);
