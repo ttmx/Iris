@@ -8,16 +8,15 @@ import net.irisshaders.iris.gl.framebuffer.GlFramebuffer;
 import net.irisshaders.iris.gl.program.Program;
 import net.irisshaders.iris.gl.program.ProgramBuilder;
 import net.irisshaders.iris.gl.program.ProgramSamplers;
-import net.irisshaders.iris.gl.program.ProgramUniforms;
 import net.irisshaders.iris.gl.texture.DepthCopyStrategy;
 import net.irisshaders.iris.gl.texture.InternalTextureFormat;
 import net.irisshaders.iris.gl.texture.PixelType;
-import net.irisshaders.iris.gl.uniform.UniformUpdateFrequency;
 import net.irisshaders.iris.uniforms.SystemTimeUniforms;
 import net.minecraft.client.Minecraft;
 import org.apache.commons.io.IOUtils;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL21C;
+import org.lwjgl.opengl.GL45C;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -30,6 +29,7 @@ public class CenterDepthSampler {
 	private final GlFramebuffer framebuffer;
 	private final int texture;
 	private final int altTexture;
+	private final int lastFrameTime;
 	private boolean hasFirstSample;
 	private boolean everRetrieved;
 	private boolean destroyed;
@@ -58,11 +58,10 @@ public class CenterDepthSampler {
 
 		builder.addDynamicSampler(depthSupplier, "depth");
 		builder.addDynamicSampler(() -> altTexture, "altDepth");
-		builder.uniform1f(UniformUpdateFrequency.PER_FRAME, "lastFrameTime", SystemTimeUniforms.TIMER::getLastFrameTime);
-		builder.uniform1f(UniformUpdateFrequency.ONCE, "decay", () -> (1.0f / ((halfLife * 0.1) / LN2)));
-		// TODO: can we just do this for all composites?
-		builder.uniformMatrix(UniformUpdateFrequency.ONCE, "projection", () -> new Matrix4f(2, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, -1, -1, 0, 1));
 		this.program = builder.build();
+
+		GL45C.glUniform1f(GL45C.glGetUniformLocation(program.getProgramId(), "decay"), (float) (1.0f / ((halfLife * 0.1) / LN2)));
+		this.lastFrameTime = GL45C.glGetUniformLocation(program.getProgramId(), "lastFrameTime");
 	}
 
 	public void sampleCenterDepth() {
@@ -77,11 +76,12 @@ public class CenterDepthSampler {
 		this.framebuffer.bind();
 		this.program.use();
 
+		IrisRenderSystem.uniform1f(lastFrameTime, SystemTimeUniforms.TIMER.getLastFrameTime());
+
 		RenderSystem.viewport(0, 0, 1, 1);
 
 		FullScreenQuadRenderer.INSTANCE.render();
 
-		ProgramUniforms.clearActiveUniforms();
 		ProgramSamplers.clearActiveSamplers();
 
 		// The API contract of DepthCopyStrategy claims it can only copy depth, however the 2 non-stencil methods used are entirely capable of copying color as of now.

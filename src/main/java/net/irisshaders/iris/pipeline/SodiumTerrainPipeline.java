@@ -9,7 +9,6 @@ import net.irisshaders.iris.gl.blending.BufferBlendOverride;
 import net.irisshaders.iris.gl.framebuffer.GlFramebuffer;
 import net.irisshaders.iris.gl.program.ProgramImages;
 import net.irisshaders.iris.gl.program.ProgramSamplers;
-import net.irisshaders.iris.gl.program.ProgramUniforms;
 import net.irisshaders.iris.parsing.PatchedShaderPrinter;
 import net.irisshaders.iris.pipeline.transform.PatchShaderType;
 import net.irisshaders.iris.pipeline.transform.TransformPatcher;
@@ -392,17 +391,6 @@ public class SodiumTerrainPipeline {
 
 	public Optional<AlphaTest> getShadowAlpha() {
 		return shadowAlpha;
-	}
-
-	public ProgramUniforms.Builder initUniforms(int programId) {
-		ProgramUniforms.Builder uniforms = ProgramUniforms.builder("<sodium shaders>", programId);
-
-		CommonUniforms.addDynamicUniforms(uniforms, FogMode.PER_VERTEX);
-		customUniforms.assignTo(uniforms);
-
-		BuiltinReplacementUniforms.addBuiltinReplacementUniforms(uniforms);
-
-		return uniforms;
 	}
 
 	public boolean hasShadowPass() {

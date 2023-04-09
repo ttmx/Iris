@@ -1,12 +1,10 @@
 package net.irisshaders.iris.uniforms;
 
 import net.irisshaders.iris.JomlConversions;
-import net.irisshaders.iris.gl.uniform.UniformHolder;
+import net.irisshaders.iris.gl.uniform.UniformCreator;
 import net.minecraft.client.Minecraft;
 import org.joml.Vector3d;
-
-import static net.irisshaders.iris.gl.uniform.UniformUpdateFrequency.ONCE;
-import static net.irisshaders.iris.gl.uniform.UniformUpdateFrequency.PER_FRAME;
+import org.joml.Vector3f;
 
 /**
  * @see <a href="https://github.com/IrisShaders/ShaderDoc/blob/master/uniforms.md#camera">Uniforms: Camera</a>
@@ -17,15 +15,15 @@ public class CameraUniforms {
 	private CameraUniforms() {
 	}
 
-	public static void addCameraUniforms(UniformHolder uniforms, FrameUpdateNotifier notifier) {
+	public static void addCameraUniforms(UniformCreator uniforms, FrameUpdateNotifier notifier) {
 		CameraPositionTracker tracker = new CameraPositionTracker(notifier);
 
 		uniforms
-			.uniform1f(ONCE, "near", () -> 0.05)
-			.uniform1f(PER_FRAME, "far", CameraUniforms::getRenderDistanceInBlocks)
-			.uniform3d(PER_FRAME, "cameraPosition", tracker::getCurrentCameraPosition)
-			.uniform1f(PER_FRAME, "eyeAltitude", tracker::getCurrentCameraPositionY)
-			.uniform3d(PER_FRAME, "previousCameraPosition", tracker::getPreviousCameraPosition);
+			.registerFloatUniform(false, "near", () -> 0.05f)
+			.registerFloatUniform(true, "far", CameraUniforms::getRenderDistanceInBlocks)
+			.registerVector3Uniform(true, "cameraPosition", tracker::getCurrentCameraPosition)
+			.registerFloatUniform(true, "eyeAltitude", tracker::getCurrentCameraPositionY)
+			.registerVector3Uniform(true, "previousCameraPosition", tracker::getPreviousCameraPosition);
 	}
 
 	private static int getRenderDistanceInBlocks() {
@@ -33,8 +31,8 @@ public class CameraUniforms {
 		return client.options.getEffectiveRenderDistance() * 16;
 	}
 
-	public static Vector3d getUnshiftedCameraPosition() {
-		return JomlConversions.fromVec3(client.gameRenderer.getMainCamera().getPosition());
+	public static Vector3f getUnshiftedCameraPosition() {
+		return JomlConversions.fromVec3Float(client.gameRenderer.getMainCamera().getPosition());
 	}
 
 	static class CameraPositionTracker {
@@ -46,9 +44,9 @@ public class CameraUniforms {
 		 */
 		private static final double WALK_RANGE = 30000;
 		private static final double TP_RANGE = 1000;
-		private final Vector3d shift = new Vector3d();
-		private Vector3d previousCameraPosition = new Vector3d();
-		private Vector3d currentCameraPosition = new Vector3d();
+		private final Vector3f shift = new Vector3f();
+		private Vector3f previousCameraPosition = new Vector3f();
+		private Vector3f currentCameraPosition = new Vector3f();
 
 		CameraPositionTracker(FrameUpdateNotifier notifier) {
 			notifier.addListener(this::update);
@@ -99,15 +97,15 @@ public class CameraUniforms {
 			previousCameraPosition.z += dZ;
 		}
 
-		public Vector3d getCurrentCameraPosition() {
+		public Vector3f getCurrentCameraPosition() {
 			return currentCameraPosition;
 		}
 
-		public Vector3d getPreviousCameraPosition() {
+		public Vector3f getPreviousCameraPosition() {
 			return previousCameraPosition;
 		}
 
-		public double getCurrentCameraPositionY() {
+		public float getCurrentCameraPositionY() {
 			return currentCameraPosition.y;
 		}
 	}

@@ -13,7 +13,6 @@ import net.irisshaders.iris.gl.program.ComputeProgram;
 import net.irisshaders.iris.gl.program.Program;
 import net.irisshaders.iris.gl.program.ProgramBuilder;
 import net.irisshaders.iris.gl.program.ProgramSamplers;
-import net.irisshaders.iris.gl.program.ProgramUniforms;
 import net.irisshaders.iris.gl.texture.TextureAccess;
 import net.irisshaders.iris.parsing.PatchedShaderPrinter;
 import net.irisshaders.iris.pipeline.WorldRenderingPipeline;
@@ -178,7 +177,6 @@ public class ShadowCompositeRenderer {
 				if (computeProgram != null) {
 					ranCompute = true;
 					computeProgram.use();
-					this.customUniforms.push(computeProgram);
 					com.mojang.blaze3d.pipeline.RenderTarget main = Minecraft.getInstance().getMainRenderTarget();
 					computeProgram.dispatch(main.width, main.height);
 				}
@@ -209,15 +207,12 @@ public class ShadowCompositeRenderer {
 			renderPass.framebuffer.bind();
 			renderPass.program.use();
 
-			this.customUniforms.push(renderPass.program);
-
 			FullScreenQuadRenderer.INSTANCE.renderQuad();
 		}
 
 		FullScreenQuadRenderer.INSTANCE.end();
 
 		// Make sure to reset the viewport to how it was before... Otherwise weird issues could occur.
-		ProgramUniforms.clearActiveUniforms();
 		GlStateManager._glUseProgram(0);
 
 		for (int i = 0; i < renderTargets.getRenderTargetCount(); i++) {
@@ -256,9 +251,6 @@ public class ShadowCompositeRenderer {
 
 		ProgramSamplers.CustomTextureSamplerInterceptor customTextureSamplerInterceptor = ProgramSamplers.customTextureSamplerInterceptor(builder, customTextureIds, flippedAtLeastOnceSnapshot);
 
-		CommonUniforms.addDynamicUniforms(builder, FogMode.OFF);
-		this.customUniforms.assignTo(builder);
-
 		IrisSamplers.addNoiseSampler(customTextureSamplerInterceptor, noiseTexture);
 		IrisSamplers.addCustomTextures(customTextureSamplerInterceptor, irisCustomTextures);
 
@@ -266,7 +258,6 @@ public class ShadowCompositeRenderer {
 		IrisImages.addShadowColorImages(builder, targets, flipped);
 
 		Program build = builder.build();
-		this.customUniforms.mapholderToPass(builder, build);
 
 		return build;
 	}
@@ -292,8 +283,7 @@ public class ShadowCompositeRenderer {
 
 				ProgramSamplers.CustomTextureSamplerInterceptor customTextureSamplerInterceptor = ProgramSamplers.customTextureSamplerInterceptor(builder, customTextureIds, flippedAtLeastOnceSnapshot);
 
-				CommonUniforms.addDynamicUniforms(builder, FogMode.OFF);
-				this.customUniforms.assignTo(builder);
+
 				IrisSamplers.addNoiseSampler(customTextureSamplerInterceptor, noiseTexture);
 				IrisSamplers.addCustomTextures(customTextureSamplerInterceptor, irisCustomTextures);
 
@@ -301,9 +291,6 @@ public class ShadowCompositeRenderer {
 				IrisImages.addShadowColorImages(builder, targets, flipped);
 
 				programs[i] = builder.buildCompute();
-
-				this.customUniforms.mapholderToPass(builder, programs[i]);
-
 
 				programs[i].setWorkGroupInfo(source.getWorkGroupRelative(), source.getWorkGroups());
 			}

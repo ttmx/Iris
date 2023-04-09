@@ -1,15 +1,14 @@
 package net.irisshaders.iris.uniforms;
 
 import com.mojang.math.Axis;
-import net.irisshaders.iris.gl.uniform.UniformHolder;
+import net.irisshaders.iris.gl.uniform.UniformCreator;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import org.joml.Matrix4f;
+import org.joml.Vector3f;
 import org.joml.Vector4f;
 
 import java.util.Objects;
-
-import static net.irisshaders.iris.gl.uniform.UniformUpdateFrequency.PER_FRAME;
 
 /**
  * @see <a href="https://github.com/IrisShaders/ShaderDoc/blob/master/uniforms.md#celestial-bodies">Uniforms: Celestial bodies</a>
@@ -41,7 +40,7 @@ public final class CelestialUniforms {
 		return shadowAngle;
 	}
 
-	private static Vector4f getUpPosition() {
+	private static Vector3f getUpPosition() {
 		Vector4f upVector = new Vector4f(0.0F, 100.0F, 0.0F, 0.0F);
 
 		// Get the current GBuffer model view matrix, since that is the basis of the celestial model view matrix
@@ -54,7 +53,7 @@ public final class CelestialUniforms {
 		// Use this matrix to transform the vector.
 		upVector = preCelestial.transform(upVector);
 
-		return upVector;
+		return truncate(upVector);
 	}
 
 	public static boolean isDay() {
@@ -72,27 +71,31 @@ public final class CelestialUniforms {
 		return getWorld().getTimeOfDay(CapturedRenderingState.INSTANCE.getTickDelta());
 	}
 
-	public void addCelestialUniforms(UniformHolder uniforms) {
+	public void addCelestialUniforms(UniformCreator uniforms) {
 		uniforms
-			.uniform1f(PER_FRAME, "sunAngle", CelestialUniforms::getSunAngle)
-			.uniformTruncated3f(PER_FRAME, "sunPosition", this::getSunPosition)
-			.uniformTruncated3f(PER_FRAME, "moonPosition", this::getMoonPosition)
-			.uniform1f(PER_FRAME, "shadowAngle", CelestialUniforms::getShadowAngle)
-			.uniformTruncated3f(PER_FRAME, "shadowLightPosition", this::getShadowLightPosition)
-			.uniformTruncated3f(PER_FRAME, "upPosition", CelestialUniforms::getUpPosition);
+			.registerFloatUniform(true, "sunAngle", CelestialUniforms::getSunAngle)
+			.registerVector3Uniform(true, "sunPosition", this::getSunPosition)
+			.registerVector3Uniform(true, "moonPosition", this::getMoonPosition)
+			.registerFloatUniform(true, "shadowAngle", CelestialUniforms::getShadowAngle)
+			.registerVector3Uniform(true, "shadowLightPosition", this::getShadowLightPosition)
+			.registerVector3Uniform(true, "upPosition", CelestialUniforms::getUpPosition);
 
 
 	}
 
-	private Vector4f getSunPosition() {
-		return getCelestialPosition(100.0F);
+	private Vector3f getSunPosition() {
+		return truncate(getCelestialPosition(100.0F));
 	}
 
-	private Vector4f getMoonPosition() {
-		return getCelestialPosition(-100.0F);
+	private static Vector3f truncate(Vector4f value) {
+		return new Vector3f(value.x, value.y, value.z);
 	}
 
-	public Vector4f getShadowLightPosition() {
+	private Vector3f getMoonPosition() {
+		return truncate(getCelestialPosition(-100.0F));
+	}
+
+	public Vector3f getShadowLightPosition() {
 		return isDay() ? getSunPosition() : getMoonPosition();
 	}
 

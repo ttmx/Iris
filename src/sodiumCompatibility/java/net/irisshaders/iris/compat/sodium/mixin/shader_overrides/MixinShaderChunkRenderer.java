@@ -11,7 +11,6 @@ import net.irisshaders.iris.compat.sodium.impl.shader_overrides.IrisChunkProgram
 import net.irisshaders.iris.compat.sodium.impl.shader_overrides.IrisChunkShaderInterface;
 import net.irisshaders.iris.compat.sodium.impl.shader_overrides.ShaderChunkRendererExt;
 import net.irisshaders.iris.gl.program.ProgramSamplers;
-import net.irisshaders.iris.gl.program.ProgramUniforms;
 import net.irisshaders.iris.shadows.ShadowRenderingState;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -69,7 +68,6 @@ public class MixinShaderChunkRenderer implements ShaderChunkRendererExt {
 
 	@Inject(method = "end", at = @At("HEAD"), remap = false, cancellable = true)
 	private void iris$onEnd(CallbackInfo ci) {
-		ProgramUniforms.clearActiveUniforms();
 		ProgramSamplers.clearActiveSamplers();
 		irisChunkProgramOverrides.unbindFramebuffer();
 

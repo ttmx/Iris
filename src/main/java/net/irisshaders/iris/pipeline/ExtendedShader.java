@@ -14,10 +14,8 @@ import net.irisshaders.iris.gl.framebuffer.GlFramebuffer;
 import net.irisshaders.iris.gl.image.ImageHolder;
 import net.irisshaders.iris.gl.program.ProgramImages;
 import net.irisshaders.iris.gl.program.ProgramSamplers;
-import net.irisshaders.iris.gl.program.ProgramUniforms;
 import net.irisshaders.iris.gl.sampler.SamplerHolder;
 import net.irisshaders.iris.gl.texture.TextureType;
-import net.irisshaders.iris.gl.uniform.DynamicLocationalUniformHolder;
 import net.irisshaders.iris.samplers.IrisSamplers;
 import net.irisshaders.iris.uniforms.CapturedRenderingState;
 import net.irisshaders.iris.uniforms.custom.CustomUniforms;
@@ -56,7 +54,6 @@ public class ExtendedShader extends ShaderInstance implements ShaderInstanceInte
 	private final ShaderAttributeInputs inputs;
 	private final Vector3f chunkOffset = new Vector3f();
 	NewWorldRenderingPipeline parent;
-	ProgramUniforms uniforms;
 	ProgramSamplers samplers;
 	ProgramImages images;
 	GlFramebuffer writingToBeforeTranslucent;
@@ -73,20 +70,16 @@ public class ExtendedShader extends ShaderInstance implements ShaderInstanceInte
 	public ExtendedShader(ResourceProvider resourceFactory, String string, VertexFormat vertexFormat,
 						  GlFramebuffer writingToBeforeTranslucent, GlFramebuffer writingToAfterTranslucent,
 						  GlFramebuffer baseline, BlendModeOverride blendModeOverride, AlphaTest alphaTest,
-						  Consumer<DynamicLocationalUniformHolder> uniformCreator, BiConsumer<SamplerHolder, ImageHolder> samplerCreator, boolean isIntensity,
+						  BiConsumer<SamplerHolder, ImageHolder> samplerCreator, boolean isIntensity,
 						  NewWorldRenderingPipeline parent, ShaderAttributeInputs inputs, @Nullable List<BufferBlendOverride> bufferBlendOverrides, CustomUniforms customUniforms) throws IOException {
 		super(resourceFactory, string, vertexFormat);
 
 		int programId = this.getId();
 
-		ProgramUniforms.Builder uniformBuilder = ProgramUniforms.builder(string, programId);
 		ProgramSamplers.Builder samplerBuilder = ProgramSamplers.builder(programId, IrisSamplers.WORLD_RESERVED_TEXTURE_UNITS);
-		uniformCreator.accept(uniformBuilder);
 		ProgramImages.Builder builder = ProgramImages.builder(programId);
 		samplerCreator.accept(samplerBuilder, builder);
-		customUniforms.mapholderToPass(uniformBuilder, this);
 
-		uniforms = uniformBuilder.buildUniforms();
 		this.customUniforms = customUniforms;
 		samplers = samplerBuilder.build();
 		images = builder.build();
@@ -113,7 +106,6 @@ public class ExtendedShader extends ShaderInstance implements ShaderInstanceInte
 
 	@Override
 	public void clear() {
-		ProgramUniforms.clearActiveUniforms();
 		ProgramSamplers.clearActiveSamplers();
 		lastApplied = null;
 
@@ -180,10 +172,6 @@ public class ExtendedShader extends ShaderInstance implements ShaderInstanceInte
 		}
 
 		samplers.update();
-		uniforms.update();
-
-		customUniforms.push(this);
-
 		images.update();
 
 

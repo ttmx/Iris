@@ -2,8 +2,7 @@ package net.irisshaders.iris.uniforms;
 
 import it.unimi.dsi.fastutil.objects.Object2IntFunction;
 import net.irisshaders.iris.api.v0.item.IrisItemLightProvider;
-import net.irisshaders.iris.gl.uniform.UniformHolder;
-import net.irisshaders.iris.gl.uniform.UniformUpdateFrequency;
+import net.irisshaders.iris.gl.uniform.UniformCreator;
 import net.irisshaders.iris.shaderpack.IdMap;
 import net.irisshaders.iris.shaderpack.materialmap.NamespacedId;
 import net.minecraft.client.Minecraft;
@@ -16,26 +15,24 @@ import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
 
-import static net.irisshaders.iris.gl.uniform.UniformUpdateFrequency.PER_FRAME;
-
 public final class IdMapUniforms {
 
 	private IdMapUniforms() {
 	}
 
-	public static void addIdMapUniforms(FrameUpdateNotifier notifier, UniformHolder uniforms, IdMap idMap, boolean isOldHandLight) {
+	public static void addIdMapUniforms(FrameUpdateNotifier notifier, UniformCreator uniforms, IdMap idMap, boolean isOldHandLight) {
 		HeldItemSupplier mainHandSupplier = new HeldItemSupplier(InteractionHand.MAIN_HAND, idMap.getItemIdMap(), isOldHandLight);
 		HeldItemSupplier offHandSupplier = new HeldItemSupplier(InteractionHand.OFF_HAND, idMap.getItemIdMap(), false);
 		notifier.addListener(mainHandSupplier::update);
 		notifier.addListener(offHandSupplier::update);
 
 		uniforms
-			.uniform1i(UniformUpdateFrequency.PER_FRAME, "heldItemId", mainHandSupplier::getIntID)
-			.uniform1i(UniformUpdateFrequency.PER_FRAME, "heldItemId2", offHandSupplier::getIntID)
-			.uniform1i(PER_FRAME, "heldBlockLightValue", mainHandSupplier::getLightValue)
-			.uniform1i(PER_FRAME, "heldBlockLightValue2", offHandSupplier::getLightValue)
-			.uniform3f(PER_FRAME, "heldBlockLightColor", mainHandSupplier::getLightColor)
-			.uniform3f(PER_FRAME, "heldBlockLightColor2", offHandSupplier::getLightColor);
+			.registerIntegerUniform(true, "heldItemId", mainHandSupplier::getIntID)
+			.registerIntegerUniform(true, "heldItemId2", offHandSupplier::getIntID)
+			.registerIntegerUniform(true, "heldBlockLightValue", mainHandSupplier::getLightValue)
+			.registerIntegerUniform(true, "heldBlockLightValue2", offHandSupplier::getLightValue)
+			.registerVector3Uniform(true, "heldBlockLightColor", mainHandSupplier::getLightColor)
+			.registerVector3Uniform(true, "heldBlockLightColor2", offHandSupplier::getLightColor);
 	}
 
 	/**

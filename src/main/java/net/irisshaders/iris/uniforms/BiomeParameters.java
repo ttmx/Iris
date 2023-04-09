@@ -2,8 +2,8 @@ package net.irisshaders.iris.uniforms;
 
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
-import net.irisshaders.iris.gl.uniform.FloatSupplier;
-import net.irisshaders.iris.gl.uniform.UniformHolder;
+import net.irisshaders.iris.gl.uniform.UniformCreator;
+import net.irisshaders.iris.helpers.FloatSupplier;
 import net.irisshaders.iris.parsing.BiomeCategories;
 import net.irisshaders.iris.parsing.ExtendedBiome;
 import net.minecraft.client.Minecraft;
@@ -17,9 +17,6 @@ import java.util.Locale;
 import java.util.function.IntSupplier;
 import java.util.function.ToIntFunction;
 
-import static net.irisshaders.iris.gl.uniform.UniformUpdateFrequency.ONCE;
-import static net.irisshaders.iris.gl.uniform.UniformUpdateFrequency.PER_TICK;
-
 public class BiomeParameters {
 	private static final Object2IntMap<ResourceKey<Biome>> biomeMap = new Object2IntOpenHashMap<>();
 
@@ -27,12 +24,12 @@ public class BiomeParameters {
 		return biomeMap;
 	}
 
-	public static void addBiomeUniforms(UniformHolder uniforms) {
+	public static void addBiomeUniforms(UniformCreator uniforms) {
 
 		uniforms
-			.uniform1i(PER_TICK, "biome", playerI(player ->
+			.registerIntegerUniform(true, "biome", playerI(player ->
 				biomeMap.getInt(player.level.getBiome(player.blockPosition()).unwrapKey().orElse(null))))
-			.uniform1i(PER_TICK, "biome_category", playerI(player -> {
+			.registerIntegerUniform(true, "biome_category", playerI(player -> {
 				Holder<Biome> holder = player.level.getBiome(player.blockPosition());
 				ExtendedBiome extendedBiome = ((ExtendedBiome) (Object) holder.value());
 				if (extendedBiome.getBiomeCategory() == -1) {
@@ -42,7 +39,7 @@ public class BiomeParameters {
 					return extendedBiome.getBiomeCategory();
 				}
 			}))
-			.uniform1i(PER_TICK, "biome_precipitation", playerI(player -> {
+			.registerIntegerUniform(true, "biome_precipitation", playerI(player -> {
 				Biome.Precipitation precipitation = player.level.getBiome(player.blockPosition()).value().getPrecipitationAt(player.blockPosition());
 				switch (precipitation) {
 					case NONE:
@@ -54,17 +51,17 @@ public class BiomeParameters {
 				}
 				throw new IllegalStateException("Unknown precipitation type:" + precipitation);
 			}))
-			.uniform1f(PER_TICK, "rainfall", playerF(player ->
+			.registerFloatUniform(true, "rainfall", playerF(player ->
 				((ExtendedBiome) (Object) player.level.getBiome(player.blockPosition()).value()).getDownfall()))
-			.uniform1f(PER_TICK, "temperature", playerF(player ->
+			.registerFloatUniform(true, "temperature", playerF(player ->
 				player.level.getBiome(player.blockPosition()).value().getBaseTemperature()))
 
 
-			.uniform1i(ONCE, "PPT_NONE", () -> 0)
-			.uniform1i(ONCE, "PPT_RAIN", () -> 1)
-			.uniform1i(ONCE, "PPT_SNOW", () -> 2)
+			.registerIntegerUniform(false, "PPT_NONE", () -> 0)
+			.registerIntegerUniform(false, "PPT_RAIN", () -> 1)
+			.registerIntegerUniform(false, "PPT_SNOW", () -> 2)
 			// Temporary fix for Sildur's Vibrant
-			.uniform1i(ONCE, "BIOME_SWAMP_HILLS", () -> -1);
+			.registerIntegerUniform(false, "BIOME_SWAMP_HILLS", () -> -1);
 
 
 		addBiomes(uniforms);
@@ -72,8 +69,8 @@ public class BiomeParameters {
 
 	}
 
-	private static void addBiomes(UniformHolder uniforms) {
-		biomeMap.forEach((biome, id) -> uniforms.uniform1i(ONCE, "BIOME_" + biome.location().getPath().toUpperCase(Locale.ROOT), () -> id));
+	private static void addBiomes(UniformCreator uniforms) {
+		biomeMap.forEach((biome, id) -> uniforms.registerIntegerUniform(false, "BIOME_" + biome.location().getPath().toUpperCase(Locale.ROOT), () -> id));
 	}
 
 	private static BiomeCategories getBiomeCategory(Holder<Biome> holder) {
@@ -117,11 +114,11 @@ public class BiomeParameters {
 		}
 	}
 
-	public static void addCategories(UniformHolder uniforms) {
+	public static void addCategories(UniformCreator uniforms) {
 		BiomeCategories[] categories = BiomeCategories.values();
 		for (int i = 0; i < categories.length; i++) {
 			int finalI = i;
-			uniforms.uniform1i(ONCE, "CAT_" + categories[i].name().toUpperCase(Locale.ROOT), () -> finalI);
+			uniforms.registerIntegerUniform(false, "CAT_" + categories[i].name().toUpperCase(Locale.ROOT), () -> finalI);
 		}
 	}
 

@@ -11,7 +11,6 @@ import org.joml.Vector3i;
 import org.lwjgl.opengl.GL43C;
 
 public final class ComputeProgram extends GlResource {
-	private final ProgramUniforms uniforms;
 	private final ProgramSamplers samplers;
 	private final ProgramImages images;
 	private final int[] localSize;
@@ -21,18 +20,16 @@ public final class ComputeProgram extends GlResource {
 	private float cachedHeight;
 	private Vector3i cachedWorkGroups;
 
-	ComputeProgram(int program, ProgramUniforms uniforms, ProgramSamplers samplers, ProgramImages images) {
+	ComputeProgram(int program, ProgramSamplers samplers, ProgramImages images) {
 		super(program);
 
 		localSize = new int[3];
 		IrisRenderSystem.getProgramiv(program, GL43C.GL_COMPUTE_WORK_GROUP_SIZE, localSize);
-		this.uniforms = uniforms;
 		this.samplers = samplers;
 		this.images = images;
 	}
 
 	public static void unbind() {
-		ProgramUniforms.clearActiveUniforms();
 		ProgramManager.glUseProgram(0);
 	}
 
@@ -62,7 +59,6 @@ public final class ComputeProgram extends GlResource {
 	public void use() {
 		ProgramManager.glUseProgram(getGlId());
 
-		uniforms.update();
 		samplers.update();
 		images.update();
 	}

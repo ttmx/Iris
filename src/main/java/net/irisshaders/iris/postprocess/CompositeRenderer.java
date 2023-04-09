@@ -15,7 +15,6 @@ import net.irisshaders.iris.gl.program.ComputeProgram;
 import net.irisshaders.iris.gl.program.Program;
 import net.irisshaders.iris.gl.program.ProgramBuilder;
 import net.irisshaders.iris.gl.program.ProgramSamplers;
-import net.irisshaders.iris.gl.program.ProgramUniforms;
 import net.irisshaders.iris.gl.sampler.SamplerLimits;
 import net.irisshaders.iris.gl.shader.ShaderCompileException;
 import net.irisshaders.iris.gl.texture.TextureAccess;
@@ -229,7 +228,6 @@ public class CompositeRenderer {
 				if (computeProgram != null) {
 					ranCompute = true;
 					computeProgram.use();
-					this.customUniforms.push(computeProgram);
 					computeProgram.dispatch(main.width, main.height);
 				}
 			}
@@ -262,9 +260,6 @@ public class CompositeRenderer {
 				renderPass.blendModeOverride.apply();
 			}
 
-			// program is the identifier for composite :shrug:
-			this.customUniforms.push(renderPass.program);
-
 			FullScreenQuadRenderer.INSTANCE.renderQuad();
 
 			BlendModeOverride.restore();
@@ -275,7 +270,6 @@ public class CompositeRenderer {
 		// Make sure to reset the viewport to how it was before... Otherwise weird issues could occur.
 		// Also bind the "main" framebuffer if it isn't already bound.
 		Minecraft.getInstance().getMainRenderTarget().bindWrite(true);
-		ProgramUniforms.clearActiveUniforms();
 		ProgramSamplers.clearActiveSamplers();
 		GlStateManager._glUseProgram(0);
 
@@ -316,10 +310,6 @@ public class CompositeRenderer {
 			throw new RuntimeException("Shader compilation failed!", e);
 		}
 
-
-		CommonUniforms.addDynamicUniforms(builder, FogMode.OFF);
-		this.customUniforms.assignTo(builder);
-
 		ProgramSamplers.CustomTextureSamplerInterceptor customTextureSamplerInterceptor = ProgramSamplers.customTextureSamplerInterceptor(builder, customTextureIds, flippedAtLeastOnceSnapshot);
 
 		IrisSamplers.addRenderTargetSamplers(customTextureSamplerInterceptor, () -> flipped, renderTargets, true);
@@ -341,10 +331,6 @@ public class CompositeRenderer {
 		centerDepthSampler.setUsage(builder.addDynamicSampler(centerDepthSampler::getCenterDepthTexture, "iris_centerDepthSmooth"));
 
 		Program build = builder.build();
-
-		// tell the customUniforms that those locations belong to this pass
-		// this is just an object to index the internal map
-		this.customUniforms.mapholderToPass(builder, build);
 
 		return build;
 	}
@@ -371,10 +357,6 @@ public class CompositeRenderer {
 
 				ProgramSamplers.CustomTextureSamplerInterceptor customTextureSamplerInterceptor = ProgramSamplers.customTextureSamplerInterceptor(builder, customTextureIds, flippedAtLeastOnceSnapshot);
 
-				CommonUniforms.addDynamicUniforms(builder, FogMode.OFF);
-
-				customUniforms.assignTo(builder);
-
 				IrisSamplers.addRenderTargetSamplers(customTextureSamplerInterceptor, () -> flipped, renderTargets, true);
 				IrisSamplers.addCustomTextures(builder, irisCustomTextures);
 				IrisSamplers.addCustomImages(customTextureSamplerInterceptor, customImages);
@@ -394,8 +376,6 @@ public class CompositeRenderer {
 				centerDepthSampler.setUsage(builder.addDynamicSampler(centerDepthSampler::getCenterDepthTexture, "iris_centerDepthSmooth"));
 
 				programs[i] = builder.buildCompute();
-
-				customUniforms.mapholderToPass(builder, programs[i]);
 
 				programs[i].setWorkGroupInfo(source.getWorkGroupRelative(), source.getWorkGroups());
 			}

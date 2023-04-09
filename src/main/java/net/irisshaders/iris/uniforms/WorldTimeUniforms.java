@@ -1,14 +1,12 @@
 package net.irisshaders.iris.uniforms;
 
 import net.irisshaders.iris.Iris;
-import net.irisshaders.iris.gl.uniform.UniformHolder;
+import net.irisshaders.iris.gl.uniform.UniformCreator;
 import net.irisshaders.iris.shaderpack.DimensionId;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 
 import java.util.Objects;
-
-import static net.irisshaders.iris.gl.uniform.UniformUpdateFrequency.PER_TICK;
 
 public final class WorldTimeUniforms {
 	private WorldTimeUniforms() {
@@ -19,11 +17,11 @@ public final class WorldTimeUniforms {
 	 *
 	 * @param uniforms the program to make the uniforms available to
 	 */
-	public static void addWorldTimeUniforms(UniformHolder uniforms) {
+	public static void addWorldTimeUniforms(UniformCreator uniforms) {
 		uniforms
-			.uniform1i(PER_TICK, "worldTime", WorldTimeUniforms::getWorldDayTime)
-			.uniform1i(PER_TICK, "worldDay", WorldTimeUniforms::getWorldDay)
-			.uniform1i(PER_TICK, "moonPhase", () -> getWorld().getMoonPhase());
+			.registerIntegerUniform(true, "worldTime", WorldTimeUniforms::getWorldDayTime)
+			.registerIntegerUniform(true, "worldDay", WorldTimeUniforms::getWorldDay)
+			.registerIntegerUniform(true, "moonPhase", () -> getWorld().getMoonPhase());
 	}
 
 	static int getWorldDayTime() {

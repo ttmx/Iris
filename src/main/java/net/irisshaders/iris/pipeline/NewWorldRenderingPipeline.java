@@ -31,6 +31,8 @@ import net.irisshaders.iris.gl.sampler.SamplerLimits;
 import net.irisshaders.iris.gl.shader.ShaderCompileException;
 import net.irisshaders.iris.gl.texture.DepthBufferFormat;
 import net.irisshaders.iris.gl.texture.TextureType;
+import net.irisshaders.iris.gl.uniform.UniformCreator;
+import net.irisshaders.iris.gl.uniform.impl.ActiveUniformBuffer;
 import net.irisshaders.iris.gui.option.IrisVideoSettings;
 import net.irisshaders.iris.helpers.Tri;
 import net.irisshaders.iris.mixin.GlStateManagerAccessor;
@@ -153,6 +155,7 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, Render
 	private final PackShadowDirectives shadowDirectives;
 	private final ColorSpaceConverter colorSpaceConverter;
 	private final boolean controlsColorSpace;
+	private final UniformCreator uniformCreator;
 	public boolean isBeforeTranslucent;
 	private ShaderStorageBufferHolder shaderStorageBufferHolder;
 	private ShadowRenderTargets shadowRenderTargets;
@@ -233,9 +236,10 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, Render
 
 		this.colorSpaceConverter = new ColorSpaceConverter(main.getColorTextureId(), IrisVideoSettings.colorSpace, main.width, main.height);
 
-		this.customUniforms = programSet.getPack().customUniforms.build(
-			holder -> CommonUniforms.addNonDynamicUniforms(holder, programSet.getPack().getIdMap(), programSet.getPackDirectives(), this.updateNotifier)
-		);
+		this.uniformCreator = new UniformCreator(new ActiveUniformBuffer());
+
+		CommonUniforms.addNonDynamicUniforms(uniformCreator, programSet.getPack().getIdMap(), programSet.getPackDirectives(), this.updateNotifier);
+		this.customUniforms = programSet.getPack().customUniforms.build(uniformCreator);
 
 		// Don't clobber anything in texture unit 0. It probably won't cause issues, but we're just being cautious here.
 		GlStateManager._activeTexture(GL20C.GL_TEXTURE2);
@@ -480,8 +484,6 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, Render
 
 		this.setup = createSetupComputes(programSet.getSetup(), programSet, TextureStage.SETUP);
 
-		// first optimization pass
-		this.customUniforms.optimise();
 		boolean hasRun = false;
 
 		for (ComputeProgram program : setup) {
@@ -525,9 +527,6 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, Render
 					throw new RuntimeException("Shader compilation failed!", e);
 				}
 
-				CommonUniforms.addDynamicUniforms(builder, FogMode.OFF);
-				customUniforms.assignTo(builder);
-
 				Supplier<ImmutableSet<Integer>> flipped;
 
 				flipped = () -> flippedBeforeShadow;
@@ -557,8 +556,6 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, Render
 
 				programs[i] = builder.buildCompute();
 
-				this.customUniforms.mapholderToPass(builder, programs[i]);
-
 				programs[i].setWorkGroupInfo(source.getWorkGroupRelative(), source.getWorkGroups());
 			}
 		}
@@ -582,9 +579,6 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, Render
 					// TODO: Better error handling
 					throw new RuntimeException("Shader compilation failed!", e);
 				}
-
-				CommonUniforms.addDynamicUniforms(builder, FogMode.OFF);
-				customUniforms.assignTo(builder);
 
 				ImmutableSet<Integer> empty = ImmutableSet.of();
 				Supplier<ImmutableSet<Integer>> flipped;
@@ -615,8 +609,6 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, Render
 
 
 				programs[i] = builder.buildCompute();
-
-				this.customUniforms.mapholderToPass(builder, programs[i]);
 
 				programs[i].setWorkGroupInfo(source.getWorkGroupRelative(), source.getWorkGroups());
 			}
@@ -854,7 +846,6 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, Render
 				for (ComputeProgram computeProgram : shadowComputes) {
 					if (computeProgram != null) {
 						computeProgram.use();
-						customUniforms.push(computeProgram);
 						computeProgram.dispatch(shadowMapResolution, shadowMapResolution);
 					}
 				}
@@ -874,9 +865,6 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, Render
 
 		// NB: execute this before resizing / clearing so that the center depth sample is retrieved properly.
 		updateNotifier.onNewFrame();
-
-		// Update custom uniforms
-		this.customUniforms.update();
 
 		RenderTarget main = Minecraft.getInstance().getMainRenderTarget();
 

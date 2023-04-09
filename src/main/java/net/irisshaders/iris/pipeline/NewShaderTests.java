@@ -99,14 +99,7 @@ public class NewShaderTests {
 			}
 		});
 
-		return new ExtendedShader(shaderResourceFactory, name, vertexFormat, writingToBeforeTranslucent, writingToAfterTranslucent, baseline, blendModeOverride, alpha, uniforms -> {
-			CommonUniforms.addDynamicUniforms(uniforms, FogMode.PER_VERTEX);
-			customUniforms.assignTo(uniforms);
-			//SamplerUniforms.addWorldSamplerUniforms(uniforms);
-			//SamplerUniforms.addDepthSamplerUniforms(uniforms);
-			BuiltinReplacementUniforms.addBuiltinReplacementUniforms(uniforms);
-			VanillaUniforms.addVanillaUniforms(uniforms);
-		}, (samplerHolder, imageHolder) -> {
+		return new ExtendedShader(shaderResourceFactory, name, vertexFormat, writingToBeforeTranslucent, writingToAfterTranslucent, baseline, blendModeOverride, alpha, (samplerHolder, imageHolder) -> {
 			parent.addGbufferOrShadowSamplers(samplerHolder, imageHolder, flipped, isShadowPass, inputs.toAvailability());
 		}, isIntensity, parent, inputs, overrides, customUniforms);
 	}

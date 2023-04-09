@@ -1,6 +1,6 @@
 package net.irisshaders.iris.uniforms;
 
-import net.irisshaders.iris.gl.uniform.UniformHolder;
+import net.irisshaders.iris.gl.uniform.UniformCreator;
 import net.irisshaders.iris.renderers.ShadowRenderer;
 import net.irisshaders.iris.shaderpack.PackDirectives;
 import net.irisshaders.iris.shadows.ShadowMatrices;
@@ -8,13 +8,11 @@ import org.joml.Matrix4f;
 
 import java.util.function.Supplier;
 
-import static net.irisshaders.iris.gl.uniform.UniformUpdateFrequency.PER_FRAME;
-
 public final class MatrixUniforms {
 	private MatrixUniforms() {
 	}
 
-	public static void addMatrixUniforms(UniformHolder uniforms, PackDirectives directives) {
+	public static void addMatrixUniforms(UniformCreator uniforms, PackDirectives directives) {
 		addMatrix(uniforms, "ModelView", CapturedRenderingState.INSTANCE::getGbufferModelView);
 		// TODO: In some cases, gbufferProjectionInverse takes on a value much different than OptiFine...
 		// We need to audit Mojang's linear algebra.
@@ -24,17 +22,17 @@ public final class MatrixUniforms {
 		addShadowMatrix(uniforms, "Projection", () -> ShadowMatrices.createOrthoMatrix(directives.getShadowDirectives().getDistance()));
 	}
 
-	private static void addMatrix(UniformHolder uniforms, String name, Supplier<Matrix4f> supplier) {
+	private static void addMatrix(UniformCreator uniforms, String name, Supplier<Matrix4f> supplier) {
 		uniforms
-			.uniformMatrix(PER_FRAME, "gbuffer" + name, supplier)
-			.uniformMatrix(PER_FRAME, "gbuffer" + name + "Inverse", new Inverted(supplier))
-			.uniformMatrix(PER_FRAME, "gbufferPrevious" + name, new Previous(supplier));
+			.registerMatrix4fUniform(true, "gbuffer" + name, supplier)
+			.registerMatrix4fUniform(true, "gbuffer" + name + "Inverse", new Inverted(supplier))
+			.registerMatrix4fUniform(true, "gbufferPrevious" + name, new Previous(supplier));
 	}
 
-	private static void addShadowMatrix(UniformHolder uniforms, String name, Supplier<Matrix4f> supplier) {
+	private static void addShadowMatrix(UniformCreator uniforms, String name, Supplier<Matrix4f> supplier) {
 		uniforms
-			.uniformMatrix(PER_FRAME, "shadow" + name, supplier)
-			.uniformMatrix(PER_FRAME, "shadow" + name + "Inverse", new Inverted(supplier));
+			.registerMatrix4fUniform(true, "shadow" + name, supplier)
+			.registerMatrix4fUniform(true, "shadow" + name + "Inverse", new Inverted(supplier));
 	}
 
 	private static class Inverted implements Supplier<Matrix4f> {

@@ -14,7 +14,6 @@ import net.irisshaders.iris.gl.program.ComputeProgram;
 import net.irisshaders.iris.gl.program.Program;
 import net.irisshaders.iris.gl.program.ProgramBuilder;
 import net.irisshaders.iris.gl.program.ProgramSamplers;
-import net.irisshaders.iris.gl.program.ProgramUniforms;
 import net.irisshaders.iris.gl.sampler.SamplerLimits;
 import net.irisshaders.iris.gl.shader.ShaderCompileException;
 import net.irisshaders.iris.gl.texture.TextureAccess;
@@ -222,7 +221,6 @@ public class FinalPassRenderer {
 			for (ComputeProgram computeProgram : finalPass.computes) {
 				if (computeProgram != null) {
 					computeProgram.use();
-					this.customUniforms.push(computeProgram);
 					computeProgram.dispatch(baseWidth, baseHeight);
 				}
 			}
@@ -238,9 +236,6 @@ public class FinalPassRenderer {
 			}
 
 			finalPass.program.use();
-
-			// program is the identifier for final :shrug:
-			this.customUniforms.push(finalPass.program);
 
 			FullScreenQuadRenderer.INSTANCE.renderQuad();
 
@@ -286,7 +281,6 @@ public class FinalPassRenderer {
 		// Make sure to reset the viewport to how it was before... Otherwise weird issues could occur.
 		// Also bind the "main" framebuffer if it isn't already bound.
 		main.bindWrite(true);
-		ProgramUniforms.clearActiveUniforms();
 		ProgramSamplers.clearActiveSamplers();
 		GlStateManager._glUseProgram(0);
 
@@ -338,9 +332,6 @@ public class FinalPassRenderer {
 			throw new RuntimeException("Shader compilation failed!", e);
 		}
 
-		CommonUniforms.addDynamicUniforms(builder, FogMode.OFF);
-		this.customUniforms.assignTo(builder);
-
 		ProgramSamplers.CustomTextureSamplerInterceptor customTextureSamplerInterceptor = ProgramSamplers.customTextureSamplerInterceptor(builder, customTextureIds, flippedAtLeastOnceSnapshot);
 
 		IrisSamplers.addRenderTargetSamplers(customTextureSamplerInterceptor, () -> flipped, renderTargets, true);
@@ -361,10 +352,6 @@ public class FinalPassRenderer {
 		centerDepthSampler.setUsage(builder.addDynamicSampler(centerDepthSampler::getCenterDepthTexture, "iris_centerDepthSmooth"));
 
 		Program build = builder.build();
-
-		// tell the customUniforms that those locations belong to this pass
-		// this is just an object to index the internal map
-		this.customUniforms.mapholderToPass(builder, build);
 
 		return build;
 	}
@@ -391,9 +378,6 @@ public class FinalPassRenderer {
 
 				ProgramSamplers.CustomTextureSamplerInterceptor customTextureSamplerInterceptor = ProgramSamplers.customTextureSamplerInterceptor(builder, customTextureIds, flippedAtLeastOnceSnapshot);
 
-				CommonUniforms.addDynamicUniforms(builder, FogMode.OFF);
-				customUniforms.assignTo(builder);
-
 				IrisSamplers.addRenderTargetSamplers(customTextureSamplerInterceptor, () -> flipped, renderTargets, true);
 				IrisSamplers.addCustomTextures(builder, irisCustomTextures);
 				IrisSamplers.addCustomImages(customTextureSamplerInterceptor, customImages);
@@ -413,8 +397,6 @@ public class FinalPassRenderer {
 				centerDepthSampler.setUsage(builder.addDynamicSampler(centerDepthSampler::getCenterDepthTexture, "iris_centerDepthSmooth"));
 
 				programs[i] = builder.buildCompute();
-
-				this.customUniforms.mapholderToPass(builder, programs[i]);
 
 				programs[i].setWorkGroupInfo(source.getWorkGroupRelative(), source.getWorkGroups());
 			}

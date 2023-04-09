@@ -11,7 +11,6 @@ import net.irisshaders.iris.gl.blending.BlendModeOverride;
 import net.irisshaders.iris.gl.blending.BufferBlendOverride;
 import net.irisshaders.iris.gl.program.ProgramImages;
 import net.irisshaders.iris.gl.program.ProgramSamplers;
-import net.irisshaders.iris.gl.program.ProgramUniforms;
 import net.irisshaders.iris.gl.texture.TextureType;
 import net.irisshaders.iris.pipeline.SodiumTerrainPipeline;
 import net.irisshaders.iris.samplers.IrisSamplers;
@@ -43,7 +42,6 @@ public class IrisChunkShaderInterface {
 	private final BlendModeOverride blendModeOverride;
 	private final IrisShaderFogComponent fogShaderComponent;
 	private final float alpha;
-	private final ProgramUniforms irisProgramUniforms;
 	private final ProgramSamplers irisProgramSamplers;
 	private final ProgramImages irisProgramImages;
 	private final List<BufferBlendOverride> bufferBlendOverrides;
@@ -68,9 +66,6 @@ public class IrisChunkShaderInterface {
 		this.hasOverrides = bufferBlendOverrides != null && !bufferBlendOverrides.isEmpty();
 		this.fogShaderComponent = new IrisShaderFogComponent(contextExt);
 
-		ProgramUniforms.Builder builder = pipeline.initUniforms(handle);
-		customUniforms.mapholderToPass(builder, this);
-		this.irisProgramUniforms = builder.buildUniforms();
 		this.irisProgramSamplers
 			= isShadowPass ? pipeline.initShadowSamplers(handle) : pipeline.initTerrainSamplers(handle);
 		this.irisProgramImages = isShadowPass ? pipeline.initShadowImages(handle) : pipeline.initTerrainImages(handle);
@@ -94,11 +89,8 @@ public class IrisChunkShaderInterface {
 		CapturedRenderingState.INSTANCE.setCurrentAlphaTest(alpha);
 
 		fogShaderComponent.setup();
-		irisProgramUniforms.update();
 		irisProgramSamplers.update();
 		irisProgramImages.update();
-
-		customUniforms.push(this);
 	}
 
 	public void restore() {

@@ -1,7 +1,6 @@
 package net.irisshaders.iris.uniforms;
 
-import net.irisshaders.iris.gl.uniform.UniformHolder;
-import net.irisshaders.iris.gl.uniform.UniformUpdateFrequency;
+import net.irisshaders.iris.gl.uniform.UniformCreator;
 
 import java.util.OptionalLong;
 import java.util.function.IntSupplier;
@@ -23,17 +22,13 @@ public final class SystemTimeUniforms {
 	 *
 	 * @param uniforms the program to make the uniforms available to
 	 */
-	public static void addSystemTimeUniforms(UniformHolder uniforms) {
+	public static void addSystemTimeUniforms(UniformCreator uniforms) {
 		uniforms
-			.uniform1i(UniformUpdateFrequency.PER_FRAME, "frameCounter", COUNTER)
+			.registerIntegerUniform(true, "frameCounter", COUNTER)
 			// TODO: Don't hardcode framemod8 here for Sildur's Vibrant Shaders
-			// .uniform1i(UniformUpdateFrequency.PER_FRAME, "framemod8", () -> COUNTER.getAsInt() % 8)
-			.uniform1f(UniformUpdateFrequency.PER_FRAME, "frameTime", TIMER::getLastFrameTime)
-			.uniform1f(UniformUpdateFrequency.PER_FRAME, "frameTimeCounter", TIMER::getFrameTimeCounter);
-	}
-
-	public static void addFloatFrameMod8Uniform(UniformHolder uniforms) {
-		uniforms.uniform1f(UniformUpdateFrequency.PER_FRAME, "framemod8", () -> COUNTER.getAsInt() % 8);
+			// .registerIntegerUniform(true, "framemod8", () -> COUNTER.getAsInt() % 8)
+			.registerFloatUniform(true, "frameTime", TIMER::getLastFrameTime)
+			.registerFloatUniform(true, "frameTimeCounter", TIMER::getFrameTimeCounter);
 	}
 
 	/**

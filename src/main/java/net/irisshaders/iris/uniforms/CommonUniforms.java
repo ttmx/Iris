@@ -4,8 +4,8 @@ import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.irisshaders.iris.JomlConversions;
 import net.irisshaders.iris.gl.state.StateUpdateNotifiers;
-import net.irisshaders.iris.gl.uniform.DynamicUniformHolder;
-import net.irisshaders.iris.gl.uniform.UniformHolder;
+import net.irisshaders.iris.gl.uniform.UniformCreator;
+
 import net.irisshaders.iris.gui.option.IrisVideoSettings;
 import net.irisshaders.iris.layer.GbufferPrograms;
 import net.irisshaders.iris.mixin.GlStateManagerAccessor;
@@ -17,6 +17,7 @@ import net.irisshaders.iris.shaderpack.PackDirectives;
 import net.irisshaders.iris.texture.TextureInfoCache;
 import net.irisshaders.iris.texture.TextureInfoCache.TextureInfo;
 import net.irisshaders.iris.texture.TextureTracker;
+import net.irisshaders.iris.uniforms.builtin.BuiltinReplacementUniforms;
 import net.irisshaders.iris.uniforms.transforms.SmoothedFloat;
 import net.irisshaders.iris.uniforms.transforms.SmoothedVec2f;
 import net.minecraft.client.Minecraft;
@@ -36,18 +37,15 @@ import org.joml.Math;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
 import org.joml.Vector3d;
+import org.joml.Vector3f;
 import org.joml.Vector4f;
 import org.joml.Vector4i;
-
-import static net.irisshaders.iris.gl.uniform.UniformUpdateFrequency.ONCE;
-import static net.irisshaders.iris.gl.uniform.UniformUpdateFrequency.PER_FRAME;
-import static net.irisshaders.iris.gl.uniform.UniformUpdateFrequency.PER_TICK;
 
 public final class CommonUniforms {
 	private static final Minecraft client = Minecraft.getInstance();
 	private static final Vector2i ZERO_VECTOR_2i = new Vector2i();
 	private static final Vector4i ZERO_VECTOR_4i = new Vector4i(0, 0, 0, 0);
-	private static final Vector3d ZERO_VECTOR_3d = new Vector3d();
+	private static final Vector3f ZERO_VECTOR_3f = new Vector3f();
 
 	static {
 		GbufferPrograms.init();
@@ -58,7 +56,7 @@ public final class CommonUniforms {
 	}
 
 	// Needs to use a LocationalUniformHolder as we need it for the common uniforms
-	public static void addDynamicUniforms(DynamicUniformHolder uniforms, FogMode fogMode) {
+	public static void addDynamicUniforms(UniformCreator uniforms, FogMode fogMode) {/*
 		ExternallyManagedUniforms.addExternallyManagedUniforms117(uniforms);
 		FogUniforms.addFogUniforms(uniforms, fogMode);
 		IrisInternalUniforms.addFogUniforms(uniforms, fogMode);
@@ -100,15 +98,16 @@ public final class CommonUniforms {
 			}
 		}, StateUpdateNotifiers.blendFuncNotifier);
 
-		uniforms.uniform1i("renderStage", () -> GbufferPrograms.getCurrentPhase().ordinal(), StateUpdateNotifiers.phaseChangeNotifier);
+		uniforms.registerIntegerUniform("renderStage", () -> GbufferPrograms.getCurrentPhase().ordinal(), StateUpdateNotifiers.phaseChangeNotifier);
+	*/
 	}
 
-	public static void addCommonUniforms(DynamicUniformHolder uniforms, IdMap idMap, PackDirectives directives, FrameUpdateNotifier updateNotifier, FogMode fogMode) {
+	/*public static void addCommonUniforms(DynamicUniformHolder uniforms, IdMap idMap, PackDirectives directives, FrameUpdateNotifier updateNotifier, FogMode fogMode) {
 		CommonUniforms.addNonDynamicUniforms(uniforms, idMap, directives, updateNotifier);
 		CommonUniforms.addDynamicUniforms(uniforms, fogMode);
-	}
+	}*/
 
-	public static void addNonDynamicUniforms(UniformHolder uniforms, IdMap idMap, PackDirectives directives, FrameUpdateNotifier updateNotifier) {
+	public static void addNonDynamicUniforms(UniformCreator uniforms, IdMap idMap, PackDirectives directives, FrameUpdateNotifier updateNotifier) {
 		CameraUniforms.addCameraUniforms(uniforms, updateNotifier);
 		ViewportUniforms.addViewportUniforms(uniforms);
 		WorldTimeUniforms.addWorldTimeUniforms(uniforms);
@@ -119,45 +118,47 @@ public final class CommonUniforms {
 		MatrixUniforms.addMatrixUniforms(uniforms, directives);
 		IdMapUniforms.addIdMapUniforms(updateNotifier, uniforms, idMap, directives.isOldHandLight());
 		CommonUniforms.generalCommonUniforms(uniforms, updateNotifier, directives);
+		BuiltinReplacementUniforms.addBuiltinReplacementUniforms(uniforms);
 	}
 
-	public static void generalCommonUniforms(UniformHolder uniforms, FrameUpdateNotifier updateNotifier, PackDirectives directives) {
-		ExternallyManagedUniforms.addExternallyManagedUniforms117(uniforms);
-
+	public static void generalCommonUniforms(UniformCreator uniforms, FrameUpdateNotifier updateNotifier, PackDirectives directives) {
 		SmoothedVec2f eyeBrightnessSmooth = new SmoothedVec2f(directives.getEyeBrightnessHalfLife(), directives.getEyeBrightnessHalfLife(), CommonUniforms::getEyeBrightness, updateNotifier);
 
 		uniforms
-			.uniform1b(PER_FRAME, "hideGUI", () -> client.options.hideGui)
-			.uniform1i(PER_FRAME, "isEyeInWater", CommonUniforms::isEyeInWater)
-			.uniform1f(PER_FRAME, "blindness", CommonUniforms::getBlindness)
-			.uniform1f(PER_FRAME, "darknessFactor", CommonUniforms::getDarknessFactor)
-			.uniform1f(PER_FRAME, "darknessLightFactor", CapturedRenderingState.INSTANCE::getDarknessLightFactor)
-			.uniform1f(PER_FRAME, "nightVision", CommonUniforms::getNightVision)
-			.uniform1b(PER_FRAME, "is_sneaking", CommonUniforms::isSneaking)
-			.uniform1b(PER_FRAME, "is_sprinting", CommonUniforms::isSprinting)
-			.uniform1b(PER_FRAME, "is_hurt", CommonUniforms::isHurt)
-			.uniform1i(PER_FRAME, "colorSpace", () -> IrisVideoSettings.colorSpace.ordinal())
-			.uniform1b(PER_FRAME, "is_invisible", CommonUniforms::isInvisible)
-			.uniform1b(PER_FRAME, "is_burning", CommonUniforms::isBurning)
+			.registerBooleanUniform(true, "hideGUI", () -> client.options.hideGui)
+			.registerIntegerUniform(true, "isEyeInWater", CommonUniforms::isEyeInWater)
+			.registerFloatUniform(true, "blindness", CommonUniforms::getBlindness)
+			.registerFloatUniform(true, "darknessFactor", CommonUniforms::getDarknessFactor)
+			.registerFloatUniform(true, "darknessLightFactor", CapturedRenderingState.INSTANCE::getDarknessLightFactor)
+			.registerFloatUniform(true, "nightVision", CommonUniforms::getNightVision)
+			.registerBooleanUniform(true, "is_sneaking", CommonUniforms::isSneaking)
+			.registerBooleanUniform(true, "is_sprinting", CommonUniforms::isSprinting)
+			.registerBooleanUniform(true, "is_hurt", CommonUniforms::isHurt)
+			.registerIntegerUniform(true, "colorSpace", () -> IrisVideoSettings.colorSpace.ordinal())
+			.registerBooleanUniform(true, "is_invisible", CommonUniforms::isInvisible)
+			.registerBooleanUniform(true, "is_burning", CommonUniforms::isBurning)
 			// TODO: Do we need to clamp this to avoid fullbright breaking shaders? Or should shaders be able to detect
 			//       that the player is trying to turn on fullbright?
-			.uniform1f(PER_FRAME, "screenBrightness", () -> client.options.gamma().get())
+			.registerFloatUniform(true, "screenBrightness", () -> client.options.gamma().get().floatValue())
 			// just a dummy value for shaders where entityColor isn't supplied through a vertex attribute (and thus is
 			// not available) - suppresses warnings. See AttributeShaderTransformer for the actual entityColor code.
-			.uniform4f(ONCE, "entityColor", () -> new Vector4f(0, 0, 0, 0))
-			.uniform1i(ONCE, "entityId", () -> -1)
-			.uniform1i(ONCE, "blockEntityId", () -> -1)
-			.uniform1i(ONCE, "currentRenderedItemId", () -> -1)
-			.uniform1f(ONCE, "pi", () -> Math.PI)
-			.uniform1f(PER_TICK, "playerMood", CommonUniforms::getPlayerMood)
-			.uniform2i(PER_FRAME, "eyeBrightness", CommonUniforms::getEyeBrightness)
-			.uniform2i(PER_FRAME, "eyeBrightnessSmooth", () -> {
+			.registerVector4Uniform(false, "entityColor", () -> new Vector4f(0, 0, 0, 0))
+			.registerIntegerUniform(false, "entityId", () -> -1)
+			.registerIntegerUniform(false, "blockEntityId", () -> -1)
+			.registerIntegerUniform(false, "currentRenderedItemId", () -> -1)
+			.registerFloatUniform(false, "pi", () -> (float) Math.PI)
+			.registerFloatUniform(true, "playerMood", CommonUniforms::getPlayerMood)
+			.registerVector2IntegerUniform(true, "eyeBrightness", CommonUniforms::getEyeBrightness)
+			.registerVector2IntegerUniform(true, "eyeBrightnessSmooth", () -> {
 				Vector2f smoothed = eyeBrightnessSmooth.get();
 				return new Vector2i((int) smoothed.x(), (int) smoothed.y());
 			})
-			.uniform1f(PER_TICK, "rainStrength", CommonUniforms::getRainStrength)
-			.uniform1f(PER_TICK, "wetness", new SmoothedFloat(directives.getWetnessHalfLife(), directives.getDrynessHalfLife(), CommonUniforms::getRainStrength, updateNotifier))
-			.uniform3d(PER_FRAME, "skyColor", CommonUniforms::getSkyColor);
+			.registerFloatUniform(true, "rainStrength", CommonUniforms::getRainStrength)
+			.registerFloatUniform(true, "wetness", new SmoothedFloat(directives.getWetnessHalfLife(), directives.getDrynessHalfLife(), CommonUniforms::getRainStrength, updateNotifier))
+			.registerVector3Uniform(true, "skyColor", CommonUniforms::getSkyColor);
+
+		uniforms.registerFloatUniform(false, "iris_currentAlphaTest", () -> 2.0f);
+
 	}
 
 	private static boolean isHurt() {
@@ -200,12 +201,12 @@ public final class CommonUniforms {
 		}
 	}
 
-	private static Vector3d getSkyColor() {
+	private static Vector3f getSkyColor() {
 		if (client.level == null || client.cameraEntity == null) {
-			return ZERO_VECTOR_3d;
+			return ZERO_VECTOR_3f;
 		}
 
-		return JomlConversions.fromVec3(client.level.getSkyColor(client.cameraEntity.position(),
+		return JomlConversions.fromVec3Float(client.level.getSkyColor(client.cameraEntity.position(),
 			CapturedRenderingState.INSTANCE.getTickDelta()));
 	}
 

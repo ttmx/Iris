@@ -143,7 +143,7 @@ public class ShadowRenderer {
 
 	public static PoseStack createShadowModelView(float sunPathRotation, float intervalSize) {
 		// Determine the camera position
-		Vector3d cameraPos = CameraUniforms.getUnshiftedCameraPosition();
+		Vector3f cameraPos = CameraUniforms.getUnshiftedCameraPosition();
 
 		double cameraX = cameraPos.x;
 		double cameraY = cameraPos.y;
@@ -366,7 +366,7 @@ public class ShadowRenderer {
 		terrainFrustumHolder = createShadowFrustum(renderDistanceMultiplier, terrainFrustumHolder);
 
 		// Determine the player camera position
-		Vector3d cameraPos = CameraUniforms.getUnshiftedCameraPosition();
+		Vector3f cameraPos = CameraUniforms.getUnshiftedCameraPosition();
 
 		double cameraX = cameraPos.x();
 		double cameraY = cameraPos.y();
