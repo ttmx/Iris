@@ -5,19 +5,13 @@ import me.jellysquid.mods.sodium.client.SodiumClientMod;
 import me.jellysquid.mods.sodium.client.gl.arena.staging.MappedStagingBuffer;
 import me.jellysquid.mods.sodium.client.gl.arena.staging.StagingBuffer;
 import me.jellysquid.mods.sodium.client.gl.buffer.GlBuffer;
-import me.jellysquid.mods.sodium.client.gl.buffer.GlBufferMapFlags;
 import me.jellysquid.mods.sodium.client.gl.buffer.GlBufferStorageFlags;
-import me.jellysquid.mods.sodium.client.gl.buffer.GlImmutableBuffer;
-import me.jellysquid.mods.sodium.client.gl.buffer.GlMutableBuffer;
 import me.jellysquid.mods.sodium.client.gl.device.CommandList;
 import me.jellysquid.mods.sodium.client.gl.device.RenderDevice;
 import me.jellysquid.mods.sodium.client.gl.util.EnumBitField;
-import me.jellysquid.mods.sodium.client.render.SodiumWorldRenderer;
 import net.irisshaders.iris.Iris;
-import net.irisshaders.iris.gl.IrisRenderSystem;
 import net.irisshaders.iris.gl.uniform.Uniform;
 import net.irisshaders.iris.gl.uniform.UniformBuffer;
-import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL32C;
 import org.lwjgl.opengl.GL43C;
 import org.lwjgl.opengl.GL45C;
@@ -26,24 +20,16 @@ import org.lwjgl.system.MemoryUtil;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import static org.lwjgl.opengl.ARBDirectStateAccess.*;
-import static org.lwjgl.opengl.GL30C.*;
-import static org.lwjgl.opengl.GL42.GL_BUFFER_UPDATE_BARRIER_BIT;
-import static org.lwjgl.opengl.GL42C.glMemoryBarrier;
-import static org.lwjgl.opengl.GL44.GL_CLIENT_MAPPED_BUFFER_BARRIER_BIT;
-
 public class ActiveUniformBuffer implements UniformBuffer {
-	private int frames;
+	private final CommandList cl;
+	private final StagingBuffer sb;
+	int frameId;
 	private long address;
 	private GlBuffer buff;
 	private int size;
 	private int offset;
 	private boolean isDone;
-	private LinkedHashMap<String, Uniform> uniforms = new LinkedHashMap<>();
-	private int currentFence;
-
-	private final CommandList cl;
-	private final StagingBuffer sb;
+	private final LinkedHashMap<String, Uniform> uniforms = new LinkedHashMap<>();
 
 	public ActiveUniformBuffer() {
 		RenderDevice.enterManagedCode();
@@ -52,7 +38,13 @@ public class ActiveUniformBuffer implements UniformBuffer {
 		RenderDevice.exitManagedCode();
 	}
 
-	int frameId;
+	private static int align(int bufferSize, int alignment) {
+		return (((bufferSize - 1) + alignment) & -alignment);
+	}
+
+	public static void main(String[] args) {
+		System.out.println(align(8, 16));
+	}
 
 	@Override
 	public void upload() {
@@ -60,7 +52,7 @@ public class ActiveUniformBuffer implements UniformBuffer {
 		sb.enqueueCopy(cl, MemoryUtil.memByteBuffer(address, size), buff, 0);
 		sb.flush(cl);
 		sb.flip();
-		GL45C.glBindBufferRange(GL43C.GL_UNIFORM_BUFFER, 1, buff.handle(),0, size);
+		GL45C.glBindBufferRange(GL43C.GL_UNIFORM_BUFFER, 1, buff.handle(), 0, size);
 		if (!isDone) {
 			throw new IllegalStateException("Tried to upload a buffer that was not marked done!");
 		}
@@ -108,14 +100,6 @@ public class ActiveUniformBuffer implements UniformBuffer {
 		return offset;
 	}
 
-	private static int align(int bufferSize, int alignment) {
-		return (((bufferSize - 1) + alignment) & -alignment);
-	}
-
-	public static void main(String[] args) {
-		System.out.println(align(8, 16));
-	}
-
 	@Override
 	public int getCurrentOffset(int byteSize, int alignment) {
 		return offset = align(offset, alignment);
@@ -123,15 +107,12 @@ public class ActiveUniformBuffer implements UniformBuffer {
 
 	@Override
 	public void done() {
-		Iris.logger.warn("Size is " + offset);
 		size = align(offset, 16);
 
 		isDone = true;
 
-		frames = SodiumClientMod.options().advanced.cpuRenderAheadLimit + 1;
 		buff = cl.createImmutableBuffer(size, EnumBitField.of(GlBufferStorageFlags.PERSISTENT, GlBufferStorageFlags.CLIENT_STORAGE, GlBufferStorageFlags.MAP_WRITE));
 		address = MemoryUtil.nmemAlloc(size);
-
 	}
 
 	@Override
