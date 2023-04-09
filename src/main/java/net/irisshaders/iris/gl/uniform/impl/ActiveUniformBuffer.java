@@ -1,6 +1,7 @@
 package net.irisshaders.iris.gl.uniform.impl;
 
 import com.mojang.blaze3d.platform.GlStateManager;
+import me.jellysquid.mods.sodium.client.SodiumClientMod;
 import net.irisshaders.iris.Iris;
 import net.irisshaders.iris.gl.IrisRenderSystem;
 import net.irisshaders.iris.gl.uniform.Uniform;
@@ -12,24 +13,29 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class ActiveUniformBuffer implements UniformBuffer {
-	private long address;
-	private int id;
+	private long[] address;
+	private int[] id;
 	private int size;
 	private int offset;
 	private boolean isDone;
 	private LinkedHashMap<String, Uniform> uniforms = new LinkedHashMap<>();
+	private int currentFence;
 
 	public ActiveUniformBuffer() {
 
 	}
 
+	int frameId;
+
 	@Override
 	public void upload() {
+		frameId = (frameId + 1) % SodiumClientMod.options().advanced.cpuRenderAheadLimit;
+		GL45C.glBindBufferBase(GL43C.GL_UNIFORM_BUFFER, 1, id[frameId]);
 		if (!isDone) {
 			throw new IllegalStateException("Tried to upload a buffer that was not marked done!");
 		}
 
-		uniforms.values().forEach(uniform -> uniform.updateValue(address));
+		uniforms.values().forEach(uniform -> uniform.updateValue(address[frameId]));
 	}
 
 	@Override
@@ -62,7 +68,7 @@ public class ActiveUniformBuffer implements UniformBuffer {
 			throw new IllegalStateException("Tried to get the ID of a buffer that was not marked done!");
 		}
 
-		return id;
+		return id[0];
 	}
 
 	@Override
@@ -88,24 +94,33 @@ public class ActiveUniformBuffer implements UniformBuffer {
 
 	@Override
 	public void done() {
-		size = offset;
+		Iris.logger.warn("Size is " + offset);
+		size = align(offset, GL45C.glGetInteger(GL45C.GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT));
 
 		isDone = true;
 
-		id = GlStateManager._glGenBuffers();
+		id = new int[SodiumClientMod.options().advanced.cpuRenderAheadLimit + 1];
 
-		GlStateManager._glBindBuffer(GL43C.GL_UNIFORM_BUFFER, id);
-		IrisRenderSystem.bufferStorage(GL43C.GL_UNIFORM_BUFFER, size, GL45C.GL_MAP_WRITE_BIT | GL45C.GL_MAP_PERSISTENT_BIT | GL45C.GL_MAP_COHERENT_BIT);
+		GL45C.glGenBuffers(id);
 
-		address = GL45C.nglMapNamedBuffer(id, GL45C.GL_WRITE_ONLY);
+		for (int id1 : id) {
+			GlStateManager._glBindBuffer(GL43C.GL_UNIFORM_BUFFER, id1);
+			IrisRenderSystem.bufferStorage(GL43C.GL_UNIFORM_BUFFER, size * ((long) SodiumClientMod.options().advanced.cpuRenderAheadLimit + 1L), GL45C.GL_MAP_WRITE_BIT | GL45C.GL_MAP_PERSISTENT_BIT | GL45C.GL_MAP_COHERENT_BIT);
+		}
 
-		IrisRenderSystem.bindBufferBase(GL43C.GL_UNIFORM_BUFFER, 1, id);
+		address = new long[SodiumClientMod.options().advanced.cpuRenderAheadLimit + 1];
+
+		for (int i = 0; i < SodiumClientMod.options().advanced.cpuRenderAheadLimit + 1; i++) {
+			address[i] = GL45C.nglMapNamedBuffer(id[i], GL45C.GL_WRITE_ONLY);
+		}
 	}
 
 	@Override
 	public void delete() {
-		GL45C.glUnmapNamedBuffer(id);
+		for (int id1 : id) {
+			GL45C.glUnmapNamedBuffer(id1);
+			GL45C.glDeleteBuffers(id1);
+		}
 
-		GL45C.glDeleteBuffers(id);
 	}
 }
