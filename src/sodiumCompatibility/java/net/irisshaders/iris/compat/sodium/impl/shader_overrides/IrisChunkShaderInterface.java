@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL32C;
+import org.lwjgl.opengl.GL45C;
 
 import java.util.List;
 
@@ -69,6 +70,8 @@ public class IrisChunkShaderInterface {
 		this.irisProgramSamplers
 			= isShadowPass ? pipeline.initShadowSamplers(handle) : pipeline.initTerrainSamplers(handle);
 		this.irisProgramImages = isShadowPass ? pipeline.initShadowImages(handle) : pipeline.initTerrainImages(handle);
+
+		GL45C.glProgramUniform1f(handle, GlStateManager._glGetUniformLocation(handle, "iris_currentAlphaTest"), alpha);
 	}
 
 	public void setup() {

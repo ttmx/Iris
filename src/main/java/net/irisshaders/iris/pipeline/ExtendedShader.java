@@ -1,5 +1,6 @@
 package net.irisshaders.iris.pipeline;
 
+import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.preprocessor.GlslPreprocessor;
 import com.mojang.blaze3d.shaders.Program;
 import com.mojang.blaze3d.shaders.ProgramManager;
@@ -29,6 +30,7 @@ import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.lwjgl.opengl.ARBTextureSwizzle;
 import org.lwjgl.opengl.GL30C;
+import org.lwjgl.opengl.GL45C;
 
 import java.io.IOException;
 import java.util.List;
@@ -98,6 +100,8 @@ public class ExtendedShader extends ShaderInstance implements ShaderInstanceInte
 		this.normalMatrix = this.getUniform("NormalMat");
 
 		this.intensitySwizzle = isIntensity;
+
+		GL45C.glProgramUniform1f(programId, GlStateManager._glGetUniformLocation(programId, "iris_currentAlphaTest"), alphaTest.getReference());
 	}
 
 	public boolean isIntensitySwizzle() {
@@ -118,8 +122,6 @@ public class ExtendedShader extends ShaderInstance implements ShaderInstanceInte
 
 	@Override
 	public void apply() {
-		CapturedRenderingState.INSTANCE.setCurrentAlphaTest(alphaTest);
-
 		if (lastApplied != this) {
 			lastApplied = this;
 			ProgramManager.glUseProgram(this.getId());

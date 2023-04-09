@@ -235,6 +235,8 @@ public class CommonTransformer {
 				//tree.parseAndInjectNode(t, ASTInjectionPoint.BEFORE_DECLARATIONS, "uniform float iris_currentAlphaTest;");
 				tree.appendMainFunctionBody(t,
 					parameters.getAlphaTest().toExpression("iris_FragData0.a", "iris_currentAlphaTest", "	"));
+				tree.parseAndInjectNode(t, ASTInjectionPoint.BEFORE_DECLARATIONS,
+					"uniform float iris_currentAlphaTest;");
 			}
 		}
 

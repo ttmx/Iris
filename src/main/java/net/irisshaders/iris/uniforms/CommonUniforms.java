@@ -156,9 +156,6 @@ public final class CommonUniforms {
 			.registerFloatUniform(true, "rainStrength", CommonUniforms::getRainStrength)
 			.registerFloatUniform(true, "wetness", new SmoothedFloat(directives.getWetnessHalfLife(), directives.getDrynessHalfLife(), CommonUniforms::getRainStrength, updateNotifier))
 			.registerVector3Uniform(true, "skyColor", CommonUniforms::getSkyColor);
-
-		uniforms.registerFloatUniform(false, "iris_currentAlphaTest", () -> 0.1f);
-
 	}
 
 	private static boolean isHurt() {
