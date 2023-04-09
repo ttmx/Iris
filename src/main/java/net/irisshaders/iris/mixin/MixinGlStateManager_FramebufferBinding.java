@@ -16,6 +16,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public class MixinGlStateManager_FramebufferBinding {
 	private static int iris$drawFramebuffer = 0;
 	private static int iris$readFramebuffer = 0;
+	private static int iris$program = 0;
 
 	@Inject(method = "_glBindFramebuffer(II)V", at = @At("HEAD"), cancellable = true, remap = false)
 	private static void iris$avoidRedundantBind(int target, int framebuffer, CallbackInfo ci) {
@@ -40,6 +41,14 @@ public class MixinGlStateManager_FramebufferBinding {
 			}
 		} else {
 			throw new IllegalStateException("Invalid framebuffer target: " + target);
+		}
+	}
+	@Inject(method = "_glUseProgram(I)V", at = @At("HEAD"), cancellable = true, remap = false)
+	private static void iris$avoidRedundantBindProgram(int program, CallbackInfo ci) {
+		if (program == iris$program) {
+			ci.cancel();
+		} else {
+			iris$program = program;
 		}
 	}
 

@@ -18,6 +18,7 @@ import net.irisshaders.iris.gl.IrisRenderSystem;
 import net.irisshaders.iris.gl.uniform.Uniform;
 import net.irisshaders.iris.gl.uniform.UniformBuffer;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL32C;
 import org.lwjgl.opengl.GL43C;
 import org.lwjgl.opengl.GL45C;
 import org.lwjgl.system.MemoryUtil;
@@ -123,7 +124,7 @@ public class ActiveUniformBuffer implements UniformBuffer {
 	@Override
 	public void done() {
 		Iris.logger.warn("Size is " + offset);
-		size = align(offset, GL45C.glGetInteger(GL45C.GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT));
+		size = align(offset, 16);
 
 		isDone = true;
 
@@ -135,6 +136,13 @@ public class ActiveUniformBuffer implements UniformBuffer {
 
 	@Override
 	public void delete() {
+		MemoryUtil.nmemFree(address);
+		GlStateManager._glBindBuffer(GL32C.GL_UNIFORM_BUFFER, 0);
+		RenderDevice.enterManagedCode();
+		cl.deleteBuffer(buff);
+		cl.flush();
+		cl.close();
+		RenderDevice.exitManagedCode();
 	}
 }
 

@@ -238,7 +238,7 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, Render
 
 		this.uniformCreator = new UniformCreator(new ActiveUniformBuffer());
 
-		CommonUniforms.addNonDynamicUniforms(uniformCreator, programSet.getPack().getIdMap(), programSet.getPackDirectives(), this.updateNotifier);
+		CommonUniforms.addNonDynamicUniforms(programSet.getPack().customUniforms, uniformCreator, programSet.getPack().getIdMap(), programSet.getPackDirectives(), this.updateNotifier);
 		this.customUniforms = programSet.getPack().customUniforms.build(uniformCreator);
 
 		uniformCreator.done();
@@ -822,7 +822,6 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, Render
 	public void beginLevelRendering() {
 		isRenderingWorld = true;
 
-		uniformCreator.newFrame();
 
 		// Make sure we're using texture unit 0 for this.
 		RenderSystem.activeTexture(GL15C.GL_TEXTURE0);
@@ -943,6 +942,8 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, Render
 		}
 
 		isBeforeTranslucent = true;
+
+		uniformCreator.newFrame();
 
 		beginRenderer.renderAll();
 

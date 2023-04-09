@@ -33,4 +33,19 @@ public class ClearPassInformation {
 
 		return information.color.equals(this.color) && information.height == this.height && information.width == this.width;
 	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + (color == null ? 1 : color.hashCode());
+		result = prime * result + width;
+		result = prime * result + height;
+		return result;
+	}
+
+	@Override
+	public String toString() {
+		return " Color: " + color + " height " + height + " width " + width;
+	}
 }

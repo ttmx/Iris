@@ -273,14 +273,6 @@ public class CompositeRenderer {
 		ProgramSamplers.clearActiveSamplers();
 		GlStateManager._glUseProgram(0);
 
-		// NB: Unbinding all of these textures is necessary for proper shaderpack reloading.
-		for (int i = 0; i < SamplerLimits.get().getMaxTextureUnits(); i++) {
-			// Unbind all textures that we may have used.
-			// NB: This is necessary for shader pack reloading to work propely
-			RenderSystem.activeTexture(GL15C.GL_TEXTURE0 + i);
-			RenderSystem.bindTexture(0);
-		}
-
 		RenderSystem.activeTexture(GL15C.GL_TEXTURE0);
 	}
 

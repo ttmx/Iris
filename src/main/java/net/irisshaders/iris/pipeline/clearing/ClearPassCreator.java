@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableList;
 import com.mojang.blaze3d.platform.GlStateManager;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
+import net.irisshaders.iris.Iris;
 import net.irisshaders.iris.rendertarget.RenderTarget;
 import net.irisshaders.iris.rendertarget.RenderTargets;
 import net.irisshaders.iris.shaderpack.PackRenderTargetDirectives;
@@ -52,8 +53,12 @@ public class ClearPassCreator {
 
 		List<ClearPass> clearPasses = new ArrayList<>();
 
+		Iris.logger.warn("Color: ");
 		clearByColor.forEach((passSize, vector4fIntListMap) -> {
+			Iris.logger.warn("Size: " + passSize);
 			vector4fIntListMap.forEach((clearInfo, buffers) -> {
+				Iris.logger.warn("ClearInfo: " + clearInfo + " for buffers " + buffers);
+
 				int startIndex = 0;
 
 				while (startIndex < buffers.size()) {

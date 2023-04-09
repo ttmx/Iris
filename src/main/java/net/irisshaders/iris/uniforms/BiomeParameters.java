@@ -2,10 +2,12 @@ package net.irisshaders.iris.uniforms;
 
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
+import net.irisshaders.iris.Iris;
 import net.irisshaders.iris.gl.uniform.UniformCreator;
 import net.irisshaders.iris.helpers.FloatSupplier;
 import net.irisshaders.iris.parsing.BiomeCategories;
 import net.irisshaders.iris.parsing.ExtendedBiome;
+import net.irisshaders.iris.uniforms.custom.CustomUniforms;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.Holder;
@@ -24,7 +26,7 @@ public class BiomeParameters {
 		return biomeMap;
 	}
 
-	public static void addBiomeUniforms(UniformCreator uniforms) {
+	public static void addBiomeUniforms(CustomUniforms.Builder customUniforms, UniformCreator uniforms) {
 
 		uniforms
 			.registerIntegerUniform(true, "biome", playerI(player ->
@@ -54,23 +56,20 @@ public class BiomeParameters {
 			.registerFloatUniform(true, "rainfall", playerF(player ->
 				((ExtendedBiome) (Object) player.level.getBiome(player.blockPosition()).value()).getDownfall()))
 			.registerFloatUniform(true, "temperature", playerF(player ->
-				player.level.getBiome(player.blockPosition()).value().getBaseTemperature()))
+				player.level.getBiome(player.blockPosition()).value().getBaseTemperature()));
 
 
-			.registerIntegerUniform(false, "PPT_NONE", () -> 0)
-			.registerIntegerUniform(false, "PPT_RAIN", () -> 1)
-			.registerIntegerUniform(false, "PPT_SNOW", () -> 2)
-			// Temporary fix for Sildur's Vibrant
-			.registerIntegerUniform(false, "BIOME_SWAMP_HILLS", () -> -1);
+			customUniforms.addVariable("int", "PPT_NONE", "0", false);
+			customUniforms.addVariable("int", "PPT_RAIN", "1", false);
+			customUniforms.addVariable("int", "PPT_SNOW", "2", false);
 
-
-		addBiomes(uniforms);
-		addCategories(uniforms);
+		addBiomes(customUniforms);
+		addCategories(customUniforms);
 
 	}
 
-	private static void addBiomes(UniformCreator uniforms) {
-		biomeMap.forEach((biome, id) -> uniforms.registerIntegerUniform(false, "BIOME_" + biome.location().getPath().toUpperCase(Locale.ROOT), () -> id));
+	private static void addBiomes(CustomUniforms.Builder customUniforms) {
+		biomeMap.forEach((biome, id) -> customUniforms.addVariable("int", "BIOME_" + biome.location().getPath().toUpperCase(Locale.ROOT), String.valueOf(id), false));
 	}
 
 	private static BiomeCategories getBiomeCategory(Holder<Biome> holder) {
@@ -114,11 +113,11 @@ public class BiomeParameters {
 		}
 	}
 
-	public static void addCategories(UniformCreator uniforms) {
+	public static void addCategories(CustomUniforms.Builder customUniforms) {
 		BiomeCategories[] categories = BiomeCategories.values();
 		for (int i = 0; i < categories.length; i++) {
 			int finalI = i;
-			uniforms.registerIntegerUniform(false, "CAT_" + categories[i].name().toUpperCase(Locale.ROOT), () -> finalI);
+			customUniforms.addVariable("int", "CAT_" + categories[i].name().toUpperCase(Locale.ROOT), String.valueOf(finalI), false);
 		}
 	}
 

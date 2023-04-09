@@ -1,30 +1,20 @@
 package net.irisshaders.iris.uniforms;
 
-import com.mojang.blaze3d.platform.GlStateManager;
-import com.mojang.blaze3d.systems.RenderSystem;
 import net.irisshaders.iris.JomlConversions;
-import net.irisshaders.iris.gl.state.StateUpdateNotifiers;
 import net.irisshaders.iris.gl.uniform.UniformCreator;
 
 import net.irisshaders.iris.gui.option.IrisVideoSettings;
 import net.irisshaders.iris.layer.GbufferPrograms;
-import net.irisshaders.iris.mixin.GlStateManagerAccessor;
-import net.irisshaders.iris.mixin.statelisteners.BooleanStateAccessor;
-import net.irisshaders.iris.mixin.texture.TextureAtlasAccessor;
 import net.irisshaders.iris.pipeline.FogMode;
 import net.irisshaders.iris.shaderpack.IdMap;
 import net.irisshaders.iris.shaderpack.PackDirectives;
-import net.irisshaders.iris.texture.TextureInfoCache;
-import net.irisshaders.iris.texture.TextureInfoCache.TextureInfo;
-import net.irisshaders.iris.texture.TextureTracker;
 import net.irisshaders.iris.uniforms.builtin.BuiltinReplacementUniforms;
+import net.irisshaders.iris.uniforms.custom.CustomUniforms;
 import net.irisshaders.iris.uniforms.transforms.SmoothedFloat;
 import net.irisshaders.iris.uniforms.transforms.SmoothedVec2f;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.GameRenderer;
-import net.minecraft.client.renderer.texture.AbstractTexture;
-import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
@@ -36,7 +26,6 @@ import net.minecraft.world.phys.Vec3;
 import org.joml.Math;
 import org.joml.Vector2f;
 import org.joml.Vector2i;
-import org.joml.Vector3d;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 import org.joml.Vector4i;
@@ -107,12 +96,12 @@ public final class CommonUniforms {
 		CommonUniforms.addDynamicUniforms(uniforms, fogMode);
 	}*/
 
-	public static void addNonDynamicUniforms(UniformCreator uniforms, IdMap idMap, PackDirectives directives, FrameUpdateNotifier updateNotifier) {
+	public static void addNonDynamicUniforms(CustomUniforms.Builder customUniforms, UniformCreator uniforms, IdMap idMap, PackDirectives directives, FrameUpdateNotifier updateNotifier) {
 		CameraUniforms.addCameraUniforms(uniforms, updateNotifier);
 		ViewportUniforms.addViewportUniforms(uniforms);
 		WorldTimeUniforms.addWorldTimeUniforms(uniforms);
 		SystemTimeUniforms.addSystemTimeUniforms(uniforms);
-		BiomeParameters.addBiomeUniforms(uniforms);
+		BiomeParameters.addBiomeUniforms(customUniforms, uniforms);
 		new CelestialUniforms(directives.getSunPathRotation()).addCelestialUniforms(uniforms);
 		IrisExclusiveUniforms.addIrisExclusiveUniforms(uniforms);
 		MatrixUniforms.addMatrixUniforms(uniforms, directives);
