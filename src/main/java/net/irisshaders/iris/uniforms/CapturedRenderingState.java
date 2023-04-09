@@ -8,6 +8,8 @@ public class CapturedRenderingState {
 	public static final CapturedRenderingState INSTANCE = new CapturedRenderingState();
 
 	private static final Vector3d ZERO_VECTOR_3d = new Vector3d();
+	private Matrix4f lastFrameProjection;
+	private Matrix4f lastFrameModelView;
 
 	private Matrix4f gbufferModelView;
 	private Matrix4f gbufferProjection;
@@ -31,6 +33,7 @@ public class CapturedRenderingState {
 	}
 
 	public void setGbufferModelView(Matrix4f gbufferModelView) {
+		this.lastFrameModelView = this.gbufferModelView;
 		this.gbufferModelView = new Matrix4f(gbufferModelView);
 	}
 
@@ -39,6 +42,7 @@ public class CapturedRenderingState {
 	}
 
 	public void setGbufferProjection(Matrix4f gbufferProjection) {
+		this.lastFrameProjection = this.gbufferProjection;
 		this.gbufferProjection = new Matrix4f(gbufferProjection);
 	}
 
@@ -116,5 +120,13 @@ public class CapturedRenderingState {
 
 	public void setCloudTime(float cloudTime) {
 		this.cloudTime = cloudTime;
+	}
+
+    public Matrix4f getGbufferProjectionLastFrame() {
+		return lastFrameProjection;
+    }
+
+	public Matrix4f getGbufferModelViewLastFrame() {
+		return lastFrameModelView;
 	}
 }

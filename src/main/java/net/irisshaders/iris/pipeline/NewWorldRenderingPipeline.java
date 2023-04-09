@@ -1165,6 +1165,7 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, Render
 			shadowRenderer.destroy();
 		}
 
+		uniformCreator.destroy();
 		if (shaderStorageBufferHolder != null) {
 			shaderStorageBufferHolder.destroyBuffers();
 		}

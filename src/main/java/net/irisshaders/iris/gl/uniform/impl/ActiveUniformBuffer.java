@@ -2,40 +2,68 @@ package net.irisshaders.iris.gl.uniform.impl;
 
 import com.mojang.blaze3d.platform.GlStateManager;
 import me.jellysquid.mods.sodium.client.SodiumClientMod;
+import me.jellysquid.mods.sodium.client.gl.arena.staging.MappedStagingBuffer;
+import me.jellysquid.mods.sodium.client.gl.arena.staging.StagingBuffer;
+import me.jellysquid.mods.sodium.client.gl.buffer.GlBuffer;
+import me.jellysquid.mods.sodium.client.gl.buffer.GlBufferMapFlags;
+import me.jellysquid.mods.sodium.client.gl.buffer.GlBufferStorageFlags;
+import me.jellysquid.mods.sodium.client.gl.buffer.GlImmutableBuffer;
+import me.jellysquid.mods.sodium.client.gl.buffer.GlMutableBuffer;
+import me.jellysquid.mods.sodium.client.gl.device.CommandList;
+import me.jellysquid.mods.sodium.client.gl.device.RenderDevice;
+import me.jellysquid.mods.sodium.client.gl.util.EnumBitField;
+import me.jellysquid.mods.sodium.client.render.SodiumWorldRenderer;
 import net.irisshaders.iris.Iris;
 import net.irisshaders.iris.gl.IrisRenderSystem;
 import net.irisshaders.iris.gl.uniform.Uniform;
 import net.irisshaders.iris.gl.uniform.UniformBuffer;
+import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL43C;
 import org.lwjgl.opengl.GL45C;
+import org.lwjgl.system.MemoryUtil;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import static org.lwjgl.opengl.ARBDirectStateAccess.*;
+import static org.lwjgl.opengl.GL30C.*;
+import static org.lwjgl.opengl.GL42.GL_BUFFER_UPDATE_BARRIER_BIT;
+import static org.lwjgl.opengl.GL42C.glMemoryBarrier;
+import static org.lwjgl.opengl.GL44.GL_CLIENT_MAPPED_BUFFER_BARRIER_BIT;
+
 public class ActiveUniformBuffer implements UniformBuffer {
-	private long[] address;
-	private int[] id;
+	private int frames;
+	private long address;
+	private GlBuffer buff;
 	private int size;
 	private int offset;
 	private boolean isDone;
 	private LinkedHashMap<String, Uniform> uniforms = new LinkedHashMap<>();
 	private int currentFence;
 
-	public ActiveUniformBuffer() {
+	private final CommandList cl;
+	private final StagingBuffer sb;
 
+	public ActiveUniformBuffer() {
+		RenderDevice.enterManagedCode();
+		cl = RenderDevice.INSTANCE.createCommandList();
+		sb = new MappedStagingBuffer(cl);
+		RenderDevice.exitManagedCode();
 	}
 
 	int frameId;
 
 	@Override
 	public void upload() {
-		frameId = (frameId + 1) % SodiumClientMod.options().advanced.cpuRenderAheadLimit;
-		GL45C.glBindBufferBase(GL43C.GL_UNIFORM_BUFFER, 1, id[frameId]);
+		uniforms.values().forEach(uniform -> uniform.updateValue(address));
+		sb.enqueueCopy(cl, MemoryUtil.memByteBuffer(address, size), buff, 0);
+		sb.flush(cl);
+		sb.flip();
+		GL45C.glBindBufferRange(GL43C.GL_UNIFORM_BUFFER, 1, buff.handle(),0, size);
 		if (!isDone) {
 			throw new IllegalStateException("Tried to upload a buffer that was not marked done!");
 		}
 
-		uniforms.values().forEach(uniform -> uniform.updateValue(address[frameId]));
 	}
 
 	@Override
@@ -68,7 +96,7 @@ public class ActiveUniformBuffer implements UniformBuffer {
 			throw new IllegalStateException("Tried to get the ID of a buffer that was not marked done!");
 		}
 
-		return id[0];
+		return buff.handle();
 	}
 
 	@Override
@@ -99,28 +127,62 @@ public class ActiveUniformBuffer implements UniformBuffer {
 
 		isDone = true;
 
-		id = new int[SodiumClientMod.options().advanced.cpuRenderAheadLimit + 1];
+		frames = SodiumClientMod.options().advanced.cpuRenderAheadLimit + 1;
+		buff = cl.createImmutableBuffer(size, EnumBitField.of(GlBufferStorageFlags.PERSISTENT, GlBufferStorageFlags.CLIENT_STORAGE, GlBufferStorageFlags.MAP_WRITE));
+		address = MemoryUtil.nmemAlloc(size);
 
-		GL45C.glGenBuffers(id);
-
-		for (int id1 : id) {
-			GlStateManager._glBindBuffer(GL43C.GL_UNIFORM_BUFFER, id1);
-			IrisRenderSystem.bufferStorage(GL43C.GL_UNIFORM_BUFFER, size * ((long) SodiumClientMod.options().advanced.cpuRenderAheadLimit + 1L), GL45C.GL_MAP_WRITE_BIT | GL45C.GL_MAP_PERSISTENT_BIT | GL45C.GL_MAP_COHERENT_BIT);
-		}
-
-		address = new long[SodiumClientMod.options().advanced.cpuRenderAheadLimit + 1];
-
-		for (int i = 0; i < SodiumClientMod.options().advanced.cpuRenderAheadLimit + 1; i++) {
-			address[i] = GL45C.nglMapNamedBuffer(id[i], GL45C.GL_WRITE_ONLY);
-		}
 	}
 
 	@Override
 	public void delete() {
-		for (int id1 : id) {
-			GL45C.glUnmapNamedBuffer(id1);
-			GL45C.glDeleteBuffers(id1);
-		}
-
 	}
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

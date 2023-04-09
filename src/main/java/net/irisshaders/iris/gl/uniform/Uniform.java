@@ -73,7 +73,7 @@ public abstract class Uniform {
 	}
 
 	public void updateValue(long address) {
-		if (!updatePerFrame && hasUpdated) return;
+		//if (!updatePerFrame && hasUpdated) return;
 
 		hasUpdated = true;
 

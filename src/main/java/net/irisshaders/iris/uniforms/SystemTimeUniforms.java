@@ -26,7 +26,7 @@ public final class SystemTimeUniforms {
 		uniforms
 			.registerIntegerUniform(true, "frameCounter", COUNTER)
 			// TODO: Don't hardcode framemod8 here for Sildur's Vibrant Shaders
-			// .registerIntegerUniform(true, "framemod8", () -> COUNTER.getAsInt() % 8)
+			//	.registerIntegerUniform(true, "framemod8", () -> COUNTER.getAsInt() % 8)
 			.registerFloatUniform(true, "frameTime", TIMER::getLastFrameTime)
 			.registerFloatUniform(true, "frameTimeCounter", TIMER::getFrameTimeCounter);
 	}

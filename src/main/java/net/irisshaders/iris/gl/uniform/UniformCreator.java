@@ -278,4 +278,8 @@ public class UniformCreator {
 	public void newFrame() {
 		buffer.upload();
 	}
+
+	public void destroy() {
+		buffer.delete();
+	}
 }
