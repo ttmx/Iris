@@ -60,6 +60,7 @@ public class CenterDepthSampler {
 		builder.addDynamicSampler(() -> altTexture, "altDepth");
 		this.program = builder.build();
 
+		program.use();
 		GL45C.glUniform1f(GL45C.glGetUniformLocation(program.getProgramId(), "decay"), (float) (1.0f / ((halfLife * 0.1) / LN2)));
 		this.lastFrameTime = GL45C.glGetUniformLocation(program.getProgramId(), "lastFrameTime");
 	}

@@ -155,7 +155,7 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, Render
 	private final PackShadowDirectives shadowDirectives;
 	private final ColorSpaceConverter colorSpaceConverter;
 	private final boolean controlsColorSpace;
-	private final UniformCreator uniformCreator;
+	public static UniformCreator uniformCreator;
 	public boolean isBeforeTranslucent;
 	private ShaderStorageBufferHolder shaderStorageBufferHolder;
 	private ShadowRenderTargets shadowRenderTargets;
@@ -240,6 +240,8 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, Render
 
 		CommonUniforms.addNonDynamicUniforms(uniformCreator, programSet.getPack().getIdMap(), programSet.getPackDirectives(), this.updateNotifier);
 		this.customUniforms = programSet.getPack().customUniforms.build(uniformCreator);
+
+		uniformCreator.done();
 
 		// Don't clobber anything in texture unit 0. It probably won't cause issues, but we're just being cautious here.
 		GlStateManager._activeTexture(GL20C.GL_TEXTURE2);
@@ -819,6 +821,8 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, Render
 	@Override
 	public void beginLevelRendering() {
 		isRenderingWorld = true;
+
+		uniformCreator.newFrame();
 
 		// Make sure we're using texture unit 0 for this.
 		RenderSystem.activeTexture(GL15C.GL_TEXTURE0);

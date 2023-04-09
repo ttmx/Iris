@@ -1,16 +1,14 @@
 package net.irisshaders.iris.gl.uniform.impl;
 
 import com.mojang.blaze3d.platform.GlStateManager;
+import net.irisshaders.iris.Iris;
 import net.irisshaders.iris.gl.IrisRenderSystem;
 import net.irisshaders.iris.gl.uniform.Uniform;
 import net.irisshaders.iris.gl.uniform.UniformBuffer;
 import org.lwjgl.opengl.GL43C;
 import org.lwjgl.opengl.GL45C;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 public class ActiveUniformBuffer implements UniformBuffer {
@@ -27,8 +25,8 @@ public class ActiveUniformBuffer implements UniformBuffer {
 
 	@Override
 	public void upload() {
-		if (isDone) {
-			throw new IllegalStateException("Tried to add a uniform to a buffer that was marked done!");
+		if (!isDone) {
+			throw new IllegalStateException("Tried to upload a buffer that was not marked done!");
 		}
 
 		uniforms.values().forEach(uniform -> uniform.updateValue(address));
@@ -71,16 +69,21 @@ public class ActiveUniformBuffer implements UniformBuffer {
 	public int register(Uniform uniform) {
 		uniforms.put(uniform.getName(), uniform);
 		offset += uniform.getByteSize();
+
 		return offset;
 	}
 
-	private int align(int bufferSize, int alignment) {
+	private static int align(int bufferSize, int alignment) {
 		return (((bufferSize - 1) + alignment) & -alignment);
 	}
 
+	public static void main(String[] args) {
+		System.out.println(align(8, 16));
+	}
+
 	@Override
-	public int getCurrentOffset(int alignment) {
-		return align(offset, alignment);
+	public int getCurrentOffset(int byteSize, int alignment) {
+		return offset = align(offset, alignment);
 	}
 
 	@Override
@@ -95,6 +98,8 @@ public class ActiveUniformBuffer implements UniformBuffer {
 		IrisRenderSystem.bufferStorage(GL43C.GL_UNIFORM_BUFFER, size, GL45C.GL_MAP_WRITE_BIT | GL45C.GL_MAP_PERSISTENT_BIT | GL45C.GL_MAP_COHERENT_BIT);
 
 		address = GL45C.nglMapNamedBuffer(id, GL45C.GL_WRITE_ONLY);
+
+		IrisRenderSystem.bindBufferBase(GL43C.GL_UNIFORM_BUFFER, 1, id);
 	}
 
 	@Override

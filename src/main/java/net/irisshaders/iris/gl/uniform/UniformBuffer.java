@@ -41,7 +41,8 @@ public interface UniformBuffer {
 	/**
 	 * Returns the current offset of this buffer, aligned to the byte size given.
 	 */
-	int getCurrentOffset(int alignment);
+
+	int getCurrentOffset(int byteSize, int alignment);
 
 	/**
 	 * Marks this buffer as done, and prevents any further uniforms from being registered.

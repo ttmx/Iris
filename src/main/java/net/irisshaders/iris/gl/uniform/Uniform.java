@@ -2,6 +2,7 @@ package net.irisshaders.iris.gl.uniform;
 
 import kroppeb.stareval.function.FunctionReturn;
 import kroppeb.stareval.function.Type;
+import net.irisshaders.iris.Iris;
 import net.irisshaders.iris.parsing.VectorType;
 import net.irisshaders.iris.uniforms.custom.CustomUniforms;
 import net.irisshaders.iris.uniforms.custom.Variable;
@@ -75,6 +76,7 @@ public abstract class Uniform {
 		if (!updatePerFrame && hasUpdated) return;
 
 		hasUpdated = true;
+
 		upload(address);
 	}
 

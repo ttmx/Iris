@@ -101,7 +101,6 @@ public class VanillaTransformer {
 		}
 
 		tree.parseAndInjectNodes(t, ASTInjectionPoint.BEFORE_DECLARATIONS,
-			"uniform mat4 iris_LightmapTextureMatrix;",
 			"uniform mat4 iris_TextureMat;",
 			"uniform mat4 iris_ModelViewMat;");
 

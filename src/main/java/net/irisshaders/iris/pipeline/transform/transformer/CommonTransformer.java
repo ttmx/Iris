@@ -28,12 +28,14 @@ import io.github.douira.glsl_transformer.util.Type;
 import net.irisshaders.iris.Iris;
 import net.irisshaders.iris.gl.blending.AlphaTest;
 import net.irisshaders.iris.gl.shader.ShaderType;
+import net.irisshaders.iris.pipeline.NewWorldRenderingPipeline;
 import net.irisshaders.iris.pipeline.transform.parameter.Parameters;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 
 public class CommonTransformer {
@@ -54,6 +56,18 @@ public class CommonTransformer {
 				pattern.getRoot().identifierIndex.getUnique("name").getAncestor(DeclarationMember.class));
 		}
 	};
+
+	public static final AutoHintedMatcher<ExternalDeclaration> uniform = new AutoHintedMatcher<>(
+		"uniform Type name;", ParseShape.EXTERNAL_DECLARATION, "__") {
+		{
+			markClassedPredicateWildcard("type",
+				pattern.getRoot().identifierIndex.getOne("Type").getAncestor(TypeSpecifier.class),
+				BuiltinNumericTypeSpecifier.class,
+				specifier -> specifier.type != null);
+			markClassWildcard("name*", pattern.getRoot().identifierIndex.getOne("name").getAncestor(DeclarationMember.class));
+		}
+	};
+
 
 	private static final AutoHintedMatcher<Expression> glFragDataI = new AutoHintedMatcher<>(
 		"gl_FragData[index]", ParseShape.EXPRESSION) {
@@ -127,6 +141,37 @@ public class CommonTransformer {
 		boolean core) {
 		// TODO: What if the shader does gl_PerVertex.gl_FogFragCoord ?
 
+		tree.parseAndInjectNode(t, ASTInjectionPoint.BEFORE_ALL, "#extension GL_ARB_shading_language_420pack : enable\n");
+		for (String name : NewWorldRenderingPipeline.uniformCreator.getUniforms().keySet()) {
+			List<Identifier> uniformNames = new ArrayList<>();
+			AtomicBoolean hadName = new AtomicBoolean(false);
+			root.process(name, id -> {
+				DeclarationExternalDeclaration declaration = (DeclarationExternalDeclaration) id.getAncestor(
+					3, 0, DeclarationExternalDeclaration.class::isInstance);
+				if (uniform.matchesExtract(declaration)) {
+					DeclarationMember secondDeclarationMember = id.getAncestor(DeclarationMember.class);
+					if (((TypeAndInitDeclaration) secondDeclarationMember.getParent()).getMembers().size() == 1) {
+						declaration.detachAndDelete();
+					} else {
+						secondDeclarationMember.detachAndDelete();
+					}
+					hadName.set(true);
+				} else {
+					uniformNames.add(id);
+				}
+			});
+
+			uniformNames.forEach(name2 -> {
+				if (!hadName.get()) {
+					name2.setName("nonUniform_" + name);
+				}
+			});
+		}
+
+		tree.parseAndInjectNode(t, ASTInjectionPoint.BEFORE_DECLARATIONS, NewWorldRenderingPipeline.uniformCreator.getLayout());
+
+
+
 		root.rename("gl_FogFragCoord", "iris_FogFragCoord");
 
 		// TODO: This doesn't handle geometry shaders... How do we do that?
@@ -187,7 +232,7 @@ public class CommonTransformer {
 
 			// insert alpha test for iris_FragData0 in the fragment shader
 			if ((parameters.getAlphaTest() != AlphaTest.ALWAYS && !core) && replaceIndexesSet.contains(0L)) {
-				tree.parseAndInjectNode(t, ASTInjectionPoint.BEFORE_DECLARATIONS, "uniform float iris_currentAlphaTest;");
+				//tree.parseAndInjectNode(t, ASTInjectionPoint.BEFORE_DECLARATIONS, "uniform float iris_currentAlphaTest;");
 				tree.appendMainFunctionBody(t,
 					parameters.getAlphaTest().toExpression("iris_FragData0.a", "iris_currentAlphaTest", "	"));
 			}

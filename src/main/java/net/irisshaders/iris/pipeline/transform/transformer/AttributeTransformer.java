@@ -112,11 +112,6 @@ public class AttributeTransformer {
 			tree.parseAndInjectNode(t, ASTInjectionPoint.BEFORE_DECLARATIONS,
 				"mat4 iris_LightmapTextureMatrix = gl_TextureMatrix[2];");
 		} else {
-			tree.parseAndInjectNode(t, ASTInjectionPoint.BEFORE_DECLARATIONS, "mat4 iris_LightmapTextureMatrix =" +
-				"mat4(iris_ONE_OVER_256, 0.0, 0.0, 0.0," +
-				"     0.0, iris_ONE_OVER_256, 0.0, 0.0," +
-				"     0.0, 0.0, iris_ONE_OVER_256, 0.0," +
-				"     iris_ONE_OVER_32, iris_ONE_OVER_32, iris_ONE_OVER_32, iris_ONE_OVER_256);");
 		}
 
 		// column major
