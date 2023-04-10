@@ -2,6 +2,7 @@ package net.irisshaders.iris.gl.texture;
 
 import net.irisshaders.iris.gl.IrisRenderSystem;
 import org.lwjgl.opengl.GL30C;
+import org.lwjgl.opengl.GL45C;
 
 import java.nio.ByteBuffer;
 import java.util.Optional;
@@ -40,6 +41,20 @@ public enum TextureType {
 				break;
 			case TEXTURE_3D:
 				IrisRenderSystem.texImage3D(texture, getGlType(), 0, internalFormat, sizeX, sizeY, sizeZ, 0, format, pixelType, pixels);
+				break;
+		}
+	}
+
+	public void applyNew(int texture, boolean mipmap, int sizeX, int sizeY, int sizeZ, int internalFormat) {
+		switch (this) {
+			case TEXTURE_1D:
+				GL45C.glTextureStorage1D(texture, mipmap ? 4 : 1, internalFormat, sizeX);
+				break;
+			case TEXTURE_2D, TEXTURE_RECTANGLE:
+				GL45C.glTextureStorage2D(texture, mipmap ? 4 : 1, internalFormat, sizeX, sizeY);
+				break;
+			case TEXTURE_3D:
+				GL45C.glTextureStorage3D(texture, mipmap ? 4 : 1, internalFormat, sizeX, sizeY, sizeZ);
 				break;
 		}
 	}

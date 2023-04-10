@@ -320,7 +320,7 @@ public class CompatibilityTransformer {
 				}
 
 				// check if the array specifier is unsized
-				if (!arraySpecifier.getChildren().isNullEmpty()) {
+				if (arraySpecifier.getChildren().isEmpty()) {
 					continue;
 				}
 
