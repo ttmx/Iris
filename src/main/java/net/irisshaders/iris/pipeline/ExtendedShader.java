@@ -101,7 +101,9 @@ public class ExtendedShader extends ShaderInstance implements ShaderInstanceInte
 
 		this.intensitySwizzle = isIntensity;
 
-		GL45C.glProgramUniform1f(programId, GlStateManager._glGetUniformLocation(programId, "iris_currentAlphaTest"), alphaTest.getReference());
+		GlStateManager._glUseProgram(programId);
+		IrisRenderSystem.uniform1f(GlStateManager._glGetUniformLocation(programId, "iris_currentAlphaTest"), alphaTest.getReference());
+		GlStateManager._glUseProgram(0);
 	}
 
 	public boolean isIntensitySwizzle() {

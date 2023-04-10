@@ -236,7 +236,7 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, Render
 
 		this.colorSpaceConverter = new ColorSpaceConverter(main.getColorTextureId(), IrisVideoSettings.colorSpace, main.width, main.height);
 
-		this.uniformCreator = new UniformCreator(new ActiveUniformBuffer());
+		this.uniformCreator = new UniformCreator("CommonUniforms", new ActiveUniformBuffer(1));
 
 		CommonUniforms.addNonDynamicUniforms(programSet.getPack().customUniforms, uniformCreator, programSet.getPack().getIdMap(), programSet.getPackDirectives(), this.updateNotifier);
 		this.customUniforms = programSet.getPack().customUniforms.build(uniformCreator);

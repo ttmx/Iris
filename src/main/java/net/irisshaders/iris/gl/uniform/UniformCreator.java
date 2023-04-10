@@ -26,9 +26,11 @@ import java.util.function.Supplier;
 
 public class UniformCreator {
 	private final UniformBuffer buffer;
+	private final String bufferName;
 	private Map<String, Type> uniformType = new HashMap<>();
 
-	public UniformCreator(UniformBuffer buffer) {
+	public UniformCreator(String bufferName, UniformBuffer buffer) {
+		this.bufferName = bufferName;
 		this.buffer = buffer;
 	}
 
@@ -262,9 +264,8 @@ public class UniformCreator {
 	public String getLayout() {
 		StringBuilder builder = new StringBuilder();
 
-		builder.append("layout (std140, binding = 1) uniform CommonUniforms {\n");
+		builder.append("layout (std140, binding = ").append(buffer.getBindingPoint()).append(") uniform ").append(bufferName).append(" {\n");
 		buffer.getUniforms().keySet().forEach(uniformInformation -> builder.append(uniformType.get(uniformInformation).toString().toLowerCase(Locale.ROOT)).append(" ").append(uniformInformation).append(";").append("\n"));
-
 
 		builder.append("};");
 

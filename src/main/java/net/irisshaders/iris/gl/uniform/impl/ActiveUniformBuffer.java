@@ -1,7 +1,6 @@
 package net.irisshaders.iris.gl.uniform.impl;
 
 import com.mojang.blaze3d.platform.GlStateManager;
-import me.jellysquid.mods.sodium.client.SodiumClientMod;
 import me.jellysquid.mods.sodium.client.gl.arena.staging.MappedStagingBuffer;
 import me.jellysquid.mods.sodium.client.gl.arena.staging.StagingBuffer;
 import me.jellysquid.mods.sodium.client.gl.buffer.GlBuffer;
@@ -9,12 +8,10 @@ import me.jellysquid.mods.sodium.client.gl.buffer.GlBufferStorageFlags;
 import me.jellysquid.mods.sodium.client.gl.device.CommandList;
 import me.jellysquid.mods.sodium.client.gl.device.RenderDevice;
 import me.jellysquid.mods.sodium.client.gl.util.EnumBitField;
-import net.irisshaders.iris.Iris;
 import net.irisshaders.iris.gl.uniform.Uniform;
 import net.irisshaders.iris.gl.uniform.UniformBuffer;
 import org.lwjgl.opengl.GL32C;
 import org.lwjgl.opengl.GL43C;
-import org.lwjgl.opengl.GL45C;
 import org.lwjgl.system.MemoryUtil;
 
 import java.util.LinkedHashMap;
@@ -23,7 +20,7 @@ import java.util.Map;
 public class ActiveUniformBuffer implements UniformBuffer {
 	private final CommandList cl;
 	private final StagingBuffer sb;
-	int frameId;
+	private final int bindingPoint;
 	private long address;
 	private GlBuffer buff;
 	private int size;
@@ -31,11 +28,17 @@ public class ActiveUniformBuffer implements UniformBuffer {
 	private boolean isDone;
 	private final LinkedHashMap<String, Uniform> uniforms = new LinkedHashMap<>();
 
-	public ActiveUniformBuffer() {
+	public ActiveUniformBuffer(int bindingPoint) {
+		this.bindingPoint = bindingPoint;
 		RenderDevice.enterManagedCode();
 		cl = RenderDevice.INSTANCE.createCommandList();
 		sb = new MappedStagingBuffer(cl);
 		RenderDevice.exitManagedCode();
+	}
+
+	@Override
+	public int getBindingPoint() {
+		return bindingPoint;
 	}
 
 	private static int align(int bufferSize, int alignment) {
@@ -52,7 +55,6 @@ public class ActiveUniformBuffer implements UniformBuffer {
 		sb.enqueueCopy(cl, MemoryUtil.memByteBuffer(address, size), buff, 0);
 		sb.flush(cl);
 		sb.flip();
-		GL45C.glBindBufferRange(GL43C.GL_UNIFORM_BUFFER, 1, buff.handle(), 0, size);
 		if (!isDone) {
 			throw new IllegalStateException("Tried to upload a buffer that was not marked done!");
 		}
@@ -113,6 +115,8 @@ public class ActiveUniformBuffer implements UniformBuffer {
 
 		buff = cl.createImmutableBuffer(size, EnumBitField.of(GlBufferStorageFlags.PERSISTENT, GlBufferStorageFlags.CLIENT_STORAGE, GlBufferStorageFlags.MAP_WRITE));
 		address = MemoryUtil.nmemAlloc(size);
+
+		GL32C.glBindBufferBase(GL43C.GL_UNIFORM_BUFFER, bindingPoint, buff.handle());
 	}
 
 	@Override

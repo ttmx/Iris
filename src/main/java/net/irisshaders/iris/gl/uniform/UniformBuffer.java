@@ -5,6 +5,8 @@ import java.util.Map;
 
 public interface UniformBuffer {
 
+	int getBindingPoint();
+
 	/**
 	 * Uploads the data in this buffer to the GPU.
 	 */
