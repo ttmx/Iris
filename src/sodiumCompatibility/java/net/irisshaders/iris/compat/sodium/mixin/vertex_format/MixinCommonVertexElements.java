@@ -38,14 +38,20 @@ public class MixinCommonVertexElements {
 			= CommonVertexElementAccessor.createCommonVertexElement("TANGENT", baseOrdinal);
 		IrisCommonVertexElements.MID_TEX_COORD
 			= CommonVertexElementAccessor.createCommonVertexElement("MID_TEX_COORD", baseOrdinal + 1);
+		IrisCommonVertexElements.TEXTURE_COMPRESSED
+			= CommonVertexElementAccessor.createCommonVertexElement("TEXTURE_COMPRESSED", baseOrdinal + 2);
+		IrisCommonVertexElements.MID_TEX_COMPRESSED
+			= CommonVertexElementAccessor.createCommonVertexElement("MID_TEX_COMPRESSED", baseOrdinal + 3);
 		IrisCommonVertexElements.BLOCK_ID
-			= CommonVertexElementAccessor.createCommonVertexElement("BLOCK_ID", baseOrdinal + 2);
+			= CommonVertexElementAccessor.createCommonVertexElement("BLOCK_ID", baseOrdinal + 4);
 		IrisCommonVertexElements.MID_BLOCK
-			= CommonVertexElementAccessor.createCommonVertexElement("MID_BLOCK", baseOrdinal + 3);
+			= CommonVertexElementAccessor.createCommonVertexElement("MID_BLOCK", baseOrdinal + 5);
 
 		$VALUES = ArrayUtils.addAll($VALUES,
 			IrisCommonVertexElements.TANGENT,
 			IrisCommonVertexElements.MID_TEX_COORD,
+			IrisCommonVertexElements.TEXTURE_COMPRESSED,
+			IrisCommonVertexElements.MID_TEX_COMPRESSED,
 			IrisCommonVertexElements.BLOCK_ID,
 			IrisCommonVertexElements.MID_BLOCK);
 
@@ -76,6 +82,10 @@ public class MixinCommonVertexElements {
 			return IrisCommonVertexElements.TANGENT;
 		} else if (element == IrisVertexFormats.MID_TEXTURE_ELEMENT) {
 			return IrisCommonVertexElements.MID_TEX_COORD;
+		} else if (element == IrisVertexFormats.UV0_ELEMENT_COMPRESSED) {
+			return IrisCommonVertexElements.TEXTURE_COMPRESSED;
+		} else if (element == IrisVertexFormats.MID_TEXTURE_ELEMENT_COMPRESSED) {
+			return IrisCommonVertexElements.MID_TEX_COMPRESSED;
 		} else {
 			return element == DefaultVertexFormat.ELEMENT_NORMAL ? CommonVertexElement.NORMAL : null;
 		}

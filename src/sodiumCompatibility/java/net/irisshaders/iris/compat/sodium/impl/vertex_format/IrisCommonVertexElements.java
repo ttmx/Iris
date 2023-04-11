@@ -8,6 +8,8 @@ import me.jellysquid.mods.sodium.client.render.vertex.transform.CommonVertexElem
 public class IrisCommonVertexElements {
 	public static CommonVertexElement TANGENT;
 	public static CommonVertexElement MID_TEX_COORD;
+	public static CommonVertexElement TEXTURE_COMPRESSED;
+	public static CommonVertexElement MID_TEX_COMPRESSED;
 	public static CommonVertexElement BLOCK_ID;
 	public static CommonVertexElement MID_BLOCK;
 }

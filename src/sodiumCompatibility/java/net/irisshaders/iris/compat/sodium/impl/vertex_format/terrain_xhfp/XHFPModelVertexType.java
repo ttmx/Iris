@@ -36,11 +36,11 @@ public class XHFPModelVertexType implements ChunkVertexType {
 
 	private static final float TEXTURE_SCALE = (1.0f / TEXTURE_MAX_VALUE);
 
-	static short encodeBlockTexture(float value) {
+	public static short encodeBlockTexture(float value) {
 		return (short) (Math.min(0.99999997F, value) * TEXTURE_MAX_VALUE);
 	}
 
-	static float decodeBlockTexture(short raw) {
+	public static float decodeBlockTexture(short raw) {
 		return (raw & 0xFFFF) * TEXTURE_SCALE;
 	}
 

@@ -4,6 +4,7 @@ import me.jellysquid.mods.sodium.client.render.vertex.VertexFormatDescription;
 import me.jellysquid.mods.sodium.client.render.vertex.transform.CommonVertexElement;
 import me.jellysquid.mods.sodium.client.render.vertex.transform.VertexTransform;
 import net.irisshaders.iris.compat.sodium.impl.vertex_format.IrisCommonVertexElements;
+import net.irisshaders.iris.compat.sodium.impl.vertex_format.terrain_xhfp.XHFPModelVertexType;
 import net.irisshaders.iris.vertices.IrisVertexFormats;
 import org.lwjgl.system.MemoryUtil;
 import org.spongepowered.asm.mixin.Mixin;
@@ -18,6 +19,57 @@ public class MixinVertexTransform {
 	@Overwrite(remap = false)
 	public static void transformSprite(long ptr, int count, VertexFormatDescription format,
 									   float minU, float minV, float maxU, float maxV) {
+		if (format.getElements().contains(IrisVertexFormats.UV0_ELEMENT_COMPRESSED)) {
+			useCompressed(ptr, count, format, minU, minV, maxU, maxV);
+		} else {
+			useUncompressed(ptr, count, format, minU, minV, maxU, maxV);
+		}
+	}
+
+	private static void useCompressed(long ptr, int count, VertexFormatDescription format, float minU, float minV, float maxU, float maxV) {
+		long stride = format.stride;
+		long offsetUV = format.getOffset(IrisCommonVertexElements.TEXTURE_COMPRESSED);
+
+		boolean hasMidTexCoord = false;
+		long offsetMidTexCoord = 0;
+
+		if (format.getElements().contains(IrisVertexFormats.MID_TEXTURE_ELEMENT_COMPRESSED)) {
+			hasMidTexCoord = true;
+			offsetMidTexCoord = format.getOffset(IrisCommonVertexElements.MID_TEX_COMPRESSED);
+		}
+		// The width/height of the sprite
+		float w = maxU - minU;
+		float h = maxV - minV;
+
+		for (int vertexIndex = 0; vertexIndex < count; vertexIndex++) {
+			// The coordinate relative to the sprite bounds
+			float u = XHFPModelVertexType.decodeBlockTexture(MemoryUtil.memGetShort(ptr + offsetUV));
+			float v = XHFPModelVertexType.decodeBlockTexture(MemoryUtil.memGetShort(ptr + offsetUV + 2));
+
+			// The coordinate absolute to the sprite sheet
+			float ut = minU + (w * u);
+			float vt = minV + (h * v);
+
+			MemoryUtil.memPutShort(ptr + offsetUV, XHFPModelVertexType.encodeBlockTexture(ut));
+			MemoryUtil.memPutShort(ptr + offsetUV + 2, XHFPModelVertexType.encodeBlockTexture(vt));
+
+			if (hasMidTexCoord) {
+				float midU = XHFPModelVertexType.decodeBlockTexture(MemoryUtil.memGetShort(ptr + offsetMidTexCoord));
+				float midV = XHFPModelVertexType.decodeBlockTexture(MemoryUtil.memGetShort(ptr + offsetMidTexCoord + 2));
+
+				// The coordinate absolute to the sprite sheet
+				float midut = minU + (w * midU);
+				float midvt = minV + (h * midV);
+
+				MemoryUtil.memPutShort(ptr + offsetMidTexCoord, XHFPModelVertexType.encodeBlockTexture(midut));
+				MemoryUtil.memPutShort(ptr + offsetMidTexCoord + 2, XHFPModelVertexType.encodeBlockTexture(midvt));
+			}
+
+			ptr += stride;
+		}
+	}
+
+	private static void useUncompressed(long ptr, int count, VertexFormatDescription format, float minU, float minV, float maxU, float maxV) {
 		long stride = format.stride;
 		long offsetUV = format.getOffset(CommonVertexElement.TEXTURE);
 

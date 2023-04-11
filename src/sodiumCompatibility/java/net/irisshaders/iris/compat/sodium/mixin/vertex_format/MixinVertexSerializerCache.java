@@ -1,11 +1,13 @@
 package net.irisshaders.iris.compat.sodium.mixin.vertex_format;
 
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import it.unimi.dsi.fastutil.longs.Long2ReferenceMap;
 import me.jellysquid.mods.sodium.client.render.vertex.VertexFormatDescription;
 import me.jellysquid.mods.sodium.client.render.vertex.VertexFormatRegistry;
 import me.jellysquid.mods.sodium.client.render.vertex.serializers.MemoryTransfer;
 import me.jellysquid.mods.sodium.client.render.vertex.serializers.VertexSerializer;
 import me.jellysquid.mods.sodium.client.render.vertex.serializers.VertexSerializerCache;
+import net.irisshaders.iris.compat.sodium.impl.vertex_format.EntityToModelVertexSerializer;
 import net.irisshaders.iris.compat.sodium.impl.vertex_format.EntityToTerrainVertexSerializer;
 import net.irisshaders.iris.vertices.IrisVertexFormats;
 import org.spongepowered.asm.mixin.Final;
@@ -37,5 +39,6 @@ public abstract class MixinVertexSerializerCache {
 	@Inject(method = "<clinit>", at = @At("TAIL"))
 	private static void putSerializerIris(CallbackInfo ci) {
 		CACHE.put(getSerializerKey(VertexFormatRegistry.get(IrisVertexFormats.ENTITY), VertexFormatRegistry.get(IrisVertexFormats.TERRAIN)), new EntityToTerrainVertexSerializer());
+		CACHE.put(getSerializerKey(VertexFormatRegistry.get(IrisVertexFormats.ENTITY), VertexFormatRegistry.get(DefaultVertexFormat.NEW_ENTITY)), new EntityToModelVertexSerializer());
 	}
 }

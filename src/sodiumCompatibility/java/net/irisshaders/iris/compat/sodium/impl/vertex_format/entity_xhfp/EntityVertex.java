@@ -8,6 +8,7 @@ import me.jellysquid.mods.sodium.client.render.vertex.VertexFormatDescription;
 import me.jellysquid.mods.sodium.client.render.vertex.VertexFormatRegistry;
 import me.jellysquid.mods.sodium.client.util.Norm3b;
 import me.jellysquid.mods.sodium.common.util.MatrixHelper;
+import net.irisshaders.iris.compat.sodium.impl.vertex_format.terrain_xhfp.XHFPModelVertexType;
 import net.irisshaders.iris.uniforms.CapturedRenderingState;
 import net.irisshaders.iris.vertices.IrisVertexFormats;
 import net.irisshaders.iris.vertices.NormalHelper;
@@ -24,11 +25,11 @@ public final class EntityVertex {
 	private static final int OFFSET_POSITION = 0;
 	private static final int OFFSET_COLOR = 12;
 	private static final int OFFSET_TEXTURE = 16;
-	private static final int OFFSET_MID_TEXTURE = 42;
-	private static final int OFFSET_OVERLAY = 24;
-	private static final int OFFSET_LIGHT = 28;
-	private static final int OFFSET_NORMAL = 32;
-	private static final int OFFSET_TANGENT = 50;
+	private static final int OFFSET_MID_TEXTURE = 38;
+	private static final int OFFSET_OVERLAY = 20;
+	private static final int OFFSET_LIGHT = 24;
+	private static final int OFFSET_NORMAL = 28;
+	private static final int OFFSET_TANGENT = 42;
 
 	private static final Vector3f lastNormal = new Vector3f();
 	private static final QuadViewEntity.QuadViewEntityUnsafe quadView = new QuadViewEntity.QuadViewEntityUnsafe();
@@ -41,8 +42,8 @@ public final class EntityVertex {
 
 		MemoryUtil.memPutInt(ptr + OFFSET_COLOR, color);
 
-		MemoryUtil.memPutFloat(ptr + OFFSET_TEXTURE, u);
-		MemoryUtil.memPutFloat(ptr + OFFSET_TEXTURE + 4, v);
+		MemoryUtil.memPutShort(ptr + OFFSET_TEXTURE, XHFPModelVertexType.encodeBlockTexture(u));
+		MemoryUtil.memPutShort(ptr + OFFSET_TEXTURE + 2, XHFPModelVertexType.encodeBlockTexture(v));
 
 		MemoryUtil.memPutInt(ptr + OFFSET_LIGHT, light);
 
@@ -51,12 +52,12 @@ public final class EntityVertex {
 		MemoryUtil.memPutInt(ptr + OFFSET_NORMAL, normal);
 		MemoryUtil.memPutInt(ptr + OFFSET_TANGENT, tangent);
 
-		MemoryUtil.memPutFloat(ptr + OFFSET_MID_TEXTURE, midU);
-		MemoryUtil.memPutFloat(ptr + OFFSET_MID_TEXTURE + 4, midV);
+		MemoryUtil.memPutShort(ptr + OFFSET_MID_TEXTURE, XHFPModelVertexType.encodeBlockTexture(midU));
+		MemoryUtil.memPutShort(ptr + OFFSET_MID_TEXTURE + 2, XHFPModelVertexType.encodeBlockTexture(midV));
 
-		MemoryUtil.memPutShort(ptr + 36, (short) CapturedRenderingState.INSTANCE.getCurrentRenderedEntity());
-		MemoryUtil.memPutShort(ptr + 38, (short) CapturedRenderingState.INSTANCE.getCurrentRenderedBlockEntity());
-		MemoryUtil.memPutShort(ptr + 40, (short) CapturedRenderingState.INSTANCE.getCurrentRenderedItem());
+		MemoryUtil.memPutShort(ptr + 32, (short) CapturedRenderingState.INSTANCE.getCurrentRenderedEntity());
+		MemoryUtil.memPutShort(ptr + 34, (short) CapturedRenderingState.INSTANCE.getCurrentRenderedBlockEntity());
+		MemoryUtil.memPutShort(ptr + 36, (short) CapturedRenderingState.INSTANCE.getCurrentRenderedItem());
 
 	}
 
@@ -68,8 +69,8 @@ public final class EntityVertex {
 
 		MemoryUtil.memPutInt(ptr + OFFSET_COLOR, color);
 
-		MemoryUtil.memPutFloat(ptr + OFFSET_TEXTURE, u);
-		MemoryUtil.memPutFloat(ptr + OFFSET_TEXTURE + 4, v);
+		MemoryUtil.memPutShort(ptr + OFFSET_TEXTURE, XHFPModelVertexType.encodeBlockTexture(u));
+		MemoryUtil.memPutShort(ptr + OFFSET_TEXTURE + 2, XHFPModelVertexType.encodeBlockTexture(v));
 
 		MemoryUtil.memPutInt(ptr + OFFSET_LIGHT, light);
 
@@ -77,12 +78,12 @@ public final class EntityVertex {
 
 		MemoryUtil.memPutInt(ptr + OFFSET_NORMAL, normal);
 
-		MemoryUtil.memPutFloat(ptr + OFFSET_MID_TEXTURE, midU);
-		MemoryUtil.memPutFloat(ptr + OFFSET_MID_TEXTURE + 4, midV);
+		MemoryUtil.memPutShort(ptr + OFFSET_MID_TEXTURE, XHFPModelVertexType.encodeBlockTexture(midU));
+		MemoryUtil.memPutShort(ptr + OFFSET_MID_TEXTURE + 2, XHFPModelVertexType.encodeBlockTexture(midV));
 
-		MemoryUtil.memPutShort(ptr + 36, (short) CapturedRenderingState.INSTANCE.getCurrentRenderedEntity());
-		MemoryUtil.memPutShort(ptr + 38, (short) CapturedRenderingState.INSTANCE.getCurrentRenderedBlockEntity());
-		MemoryUtil.memPutShort(ptr + 40, (short) CapturedRenderingState.INSTANCE.getCurrentRenderedItem());
+		MemoryUtil.memPutShort(ptr + 32, (short) CapturedRenderingState.INSTANCE.getCurrentRenderedEntity());
+		MemoryUtil.memPutShort(ptr + 34, (short) CapturedRenderingState.INSTANCE.getCurrentRenderedBlockEntity());
+		MemoryUtil.memPutShort(ptr + 36, (short) CapturedRenderingState.INSTANCE.getCurrentRenderedItem());
 
 	}
 
@@ -140,7 +141,7 @@ public final class EntityVertex {
 		int tangent = NormalHelper.computeTangent(normalX, normalY, normalZ, quadView);
 
 		for (long vertex = 0; vertex < 4; vertex++) {
-			MemoryUtil.memPutInt(ptr + 50 - STRIDE * vertex, tangent);
+			MemoryUtil.memPutInt(ptr + OFFSET_TANGENT - STRIDE * vertex, tangent);
 		}
 	}
 }
