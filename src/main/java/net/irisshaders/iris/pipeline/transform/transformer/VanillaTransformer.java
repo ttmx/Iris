@@ -1,14 +1,20 @@
 package net.irisshaders.iris.pipeline.transform.transformer;
 
+import io.github.douira.glsl_transformer.ast.node.Identifier;
 import io.github.douira.glsl_transformer.ast.node.TranslationUnit;
+import io.github.douira.glsl_transformer.ast.node.declaration.TypeAndInitDeclaration;
+import io.github.douira.glsl_transformer.ast.node.external_declaration.DeclarationExternalDeclaration;
+import io.github.douira.glsl_transformer.ast.node.type.specifier.BuiltinNumericTypeSpecifier;
 import io.github.douira.glsl_transformer.ast.query.Root;
 import io.github.douira.glsl_transformer.ast.transform.ASTInjectionPoint;
 import io.github.douira.glsl_transformer.ast.transform.ASTParser;
+import io.github.douira.glsl_transformer.util.Type;
 import net.irisshaders.iris.gl.shader.ShaderType;
 import net.irisshaders.iris.pipeline.AlphaTests;
 import net.irisshaders.iris.pipeline.transform.parameter.VanillaParameters;
 
 public class VanillaTransformer {
+	private static final float textureScale = (1.0f / 65536);
 	public static void transform(
 		ASTParser t,
 		TranslationUnit tree,
@@ -21,6 +27,10 @@ public class VanillaTransformer {
 			AttributeTransformer.patchEntityId(t, tree, root, parameters);
 		}
 
+		if (parameters.inputs.isEntity()) {
+			replaceMidTexCoord(t, tree, root, textureScale);
+		}
+
 		CommonTransformer.transform(t, tree, root, parameters, false);
 
 		if (parameters.type.glShaderType == ShaderType.VERTEX) {
@@ -29,8 +39,13 @@ public class VanillaTransformer {
 			root.rename("gl_MultiTexCoord2", "gl_MultiTexCoord1");
 
 			if (parameters.inputs.hasTex()) {
-				root.replaceReferenceExpressions(t, "gl_MultiTexCoord0",
-					"vec4(iris_UV0, 0.0, 1.0)");
+				if (parameters.inputs.isEntity()) {
+					root.replaceReferenceExpressions(t, "gl_MultiTexCoord0",
+						"vec4(iris_UV0 * " + textureScale + ", 0.0, 1.0)");
+				} else {
+					root.replaceReferenceExpressions(t, "gl_MultiTexCoord0",
+						"vec4(iris_UV0, 0.0, 1.0)");
+				}
 				tree.parseAndInjectNode(t, ASTInjectionPoint.BEFORE_DECLARATIONS,
 					"in vec2 iris_UV0;");
 			} else {
@@ -207,5 +222,55 @@ public class VanillaTransformer {
 		root.rename("gl_ProjectionMatrix", "iris_ProjMat");
 		tree.parseAndInjectNode(t, ASTInjectionPoint.BEFORE_DECLARATIONS,
 			"uniform mat4 iris_ProjMat;");
+	}
+
+
+	public static void replaceMidTexCoord(ASTParser t,
+										  TranslationUnit tree, Root root, float textureScale) {
+		Type dimension = Type.BOOL;
+		for (Identifier id : root.identifierIndex.get("mc_midTexCoord")) {
+			TypeAndInitDeclaration initDeclaration = (TypeAndInitDeclaration) id.getAncestor(
+				2, 0, TypeAndInitDeclaration.class::isInstance);
+			if (initDeclaration == null) {
+				continue;
+			}
+			DeclarationExternalDeclaration declaration = (DeclarationExternalDeclaration) initDeclaration.getAncestor(
+				1, 0, DeclarationExternalDeclaration.class::isInstance);
+			if (declaration == null) {
+				continue;
+			}
+			if (initDeclaration.getType().getTypeSpecifier() instanceof BuiltinNumericTypeSpecifier numeric) {
+				dimension = numeric.type;
+
+				declaration.detachAndDelete();
+				initDeclaration.detachAndDelete();
+				id.detachAndDelete();
+				break;
+			}
+		}
+
+
+		root.replaceReferenceExpressions(t, "mc_midTexCoord", "iris_MidTex");
+
+		switch (dimension) {
+			case BOOL:
+				return;
+			case FLOAT32:
+				tree.parseAndInjectNode(t, ASTInjectionPoint.BEFORE_DECLARATIONS, "float iris_MidTex = (mc_midTexCoord.x * " + textureScale + ").x;");
+				break;
+			case F32VEC2:
+				tree.parseAndInjectNode(t, ASTInjectionPoint.BEFORE_DECLARATIONS, "vec2 iris_MidTex = (mc_midTexCoord.xy * " + textureScale + ").xy;");
+				break;
+			case F32VEC3:
+				tree.parseAndInjectNode(t, ASTInjectionPoint.BEFORE_DECLARATIONS, "vec3 iris_MidTex = vec3(mc_midTexCoord.xy * " + textureScale + ", 0.0);");
+				break;
+			case F32VEC4:
+				tree.parseAndInjectNode(t, ASTInjectionPoint.BEFORE_DECLARATIONS, "vec4 iris_MidTex = vec4(mc_midTexCoord.xy * " + textureScale + ", 0.0, 1.0);");
+				break;
+			default:
+				throw new IllegalStateException("Somehow got a midTexCoord that is *above* 4 dimensions???");
+		}
+
+		tree.parseAndInjectNode(t, ASTInjectionPoint.BEFORE_DECLARATIONS, "in vec2 mc_midTexCoord;");
 	}
 }

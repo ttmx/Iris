@@ -3,6 +3,8 @@ package net.irisshaders.iris.mixin.vertices;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.BufferVertexConsumer;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.DefaultedVertexConsumer;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormatElement;
 import net.irisshaders.iris.block_rendering.BlockRenderingSettings;
@@ -29,7 +31,7 @@ import java.nio.ByteBuffer;
  * Dynamically and transparently extends the vanilla vertex formats with additional data
  */
 @Mixin(BufferBuilder.class)
-public abstract class MixinBufferBuilder implements BufferVertexConsumer, BlockSensitiveBufferBuilder, ExtendingBufferBuilder {
+public abstract class MixinBufferBuilder extends DefaultedVertexConsumer implements BufferVertexConsumer, BlockSensitiveBufferBuilder, ExtendingBufferBuilder {
 	@Unique
 	private final BufferBuilderPolygonView polygon = new BufferBuilderPolygonView();
 	@Unique
@@ -80,6 +82,8 @@ public abstract class MixinBufferBuilder implements BufferVertexConsumer, BlockS
 
 	@Shadow
 	private @Nullable VertexFormatElement currentElement;
+	private float midU;
+	private float midV;
 
 	@Shadow
 	public abstract void begin(VertexFormat.Mode drawMode, VertexFormat vertexFormat);
@@ -135,6 +139,18 @@ public abstract class MixinBufferBuilder implements BufferVertexConsumer, BlockS
 		return arg;
 	}
 
+	@Override
+	public VertexConsumer uv(float u, float v) {
+		midU += u;
+		midV += v;
+		if (extending && !iris$isTerrain) {
+			this.putShort(0, encodeBlockTexture(u));
+			this.putShort(2, encodeBlockTexture(v));
+			this.nextElement();
+			return this;
+		}
+		return BufferVertexConsumer.super.uv(u, v);
+	}
 
 	@Inject(method = "discard()V", at = @At("HEAD"))
 	private void iris$onDiscard(CallbackInfo ci) {
@@ -177,8 +193,13 @@ public abstract class MixinBufferBuilder implements BufferVertexConsumer, BlockS
 		this.nextElement();
 
 		// MID_TEXTURE_ELEMENT
-		this.putFloat(0, 0);
-		this.putFloat(4, 0);
+		if (iris$isTerrain) {
+			this.putFloat(0, 0);
+			this.putFloat(4, 0);
+		} else {
+			this.putShort(0, (short) 0);
+			this.putShort(2, (short) 0);
+		}
 		this.nextElement();
 		// TANGENT_ELEMENT
 		this.putInt(0, 0);
@@ -201,20 +222,17 @@ public abstract class MixinBufferBuilder implements BufferVertexConsumer, BlockS
 	}
 
 	@Unique
+	private static short encodeBlockTexture(float value) {
+		return (short) (Math.min(0.99999997F, value) * 65536);
+	}
+
+	@Unique
 	private void fillExtendedData(int vertexAmount) {
 		vertexCount = 0;
 
 		int stride = format.getVertexSize();
 
-		polygon.setup(buffer, nextElementByte, stride, vertexAmount);
-
-		float midU = 0;
-		float midV = 0;
-
-		for (int vertex = 0; vertex < vertexAmount; vertex++) {
-			midU += polygon.u(vertex);
-			midV += polygon.v(vertex);
-		}
+		polygon.setup(buffer, nextElementByte, stride, vertexAmount, !iris$isTerrain);
 
 		midU /= vertexAmount;
 		midV /= vertexAmount;
@@ -224,6 +242,7 @@ public abstract class MixinBufferBuilder implements BufferVertexConsumer, BlockS
 		} else {
 			NormalHelper.computeFaceNormal(normal, polygon);
 		}
+
 		int packedNormal = NormalHelper.packNormal(normal, 0.0f);
 
 		int tangent = NormalHelper.computeTangent(normal.x, normal.y, normal.z, polygon);
@@ -232,24 +251,36 @@ public abstract class MixinBufferBuilder implements BufferVertexConsumer, BlockS
 		int midVOffset;
 		int normalOffset;
 		int tangentOffset;
+
+		if (!iris$isTerrain) {
+			//System.out.println(midU + " " + midV);
+		}
 		if (iris$isTerrain) {
 			midUOffset = 16;
 			midVOffset = 12;
 			normalOffset = 24;
 			tangentOffset = 8;
 		} else {
-			midUOffset = 12;
-			midVOffset = 8;
-			normalOffset = 22;
+			midUOffset = 8;
+			midVOffset = 6;
+			normalOffset = 18;
 			tangentOffset = 4;
 		}
 
 		for (int vertex = 0; vertex < vertexAmount; vertex++) {
-			buffer.putFloat(nextElementByte - midUOffset - stride * vertex, midU);
-			buffer.putFloat(nextElementByte - midVOffset - stride * vertex, midV);
+			if (iris$isTerrain) {
+				buffer.putFloat(nextElementByte - midUOffset - stride * vertex, midU);
+				buffer.putFloat(nextElementByte - midVOffset - stride * vertex, midV);
+			} else {
+				buffer.putShort(nextElementByte - midUOffset - stride * vertex, encodeBlockTexture(midU));
+				buffer.putShort(nextElementByte - midVOffset - stride * vertex, encodeBlockTexture(midV));
+			}
 			buffer.putInt(nextElementByte - normalOffset - stride * vertex, packedNormal);
 			buffer.putInt(nextElementByte - tangentOffset - stride * vertex, tangent);
 		}
+
+		midU = 0f;
+		midV = 0f;
 	}
 
 	@Override
