@@ -10,6 +10,7 @@ public class IrisVertexFormats {
 	public static final VertexFormatElement ENTITY_ID_ELEMENT;
 	public static final VertexFormatElement MID_TEXTURE_ELEMENT;
 	public static final VertexFormatElement UV0_ELEMENT_COMPRESSED;
+	public static final VertexFormatElement ELEMENT_UV12 = new VertexFormatElement(1, VertexFormatElement.Type.UBYTE, VertexFormatElement.Usage.UV, 4);
 	public static final VertexFormatElement MID_TEXTURE_ELEMENT_COMPRESSED;
 	public static final VertexFormatElement TANGENT_ELEMENT;
 	public static final VertexFormatElement MID_BLOCK_ELEMENT;
@@ -48,11 +49,10 @@ public class IrisVertexFormats {
 		entityElements.put("Position", DefaultVertexFormat.ELEMENT_POSITION); // 12
 		entityElements.put("Color", DefaultVertexFormat.ELEMENT_COLOR); // 16
 		entityElements.put("UV0", UV0_ELEMENT_COMPRESSED); // 20
-		entityElements.put("UV1", DefaultVertexFormat.ELEMENT_UV1); // 24
-		entityElements.put("UV2", DefaultVertexFormat.ELEMENT_UV2); // 28
-		entityElements.put("Normal", NT); // 32
-		entityElements.put("iris_Entity", ENTITY_ID_ELEMENT); // 36
-		entityElements.put("mc_midTexCoord", MID_TEXTURE_ELEMENT_COMPRESSED); // 40
+		entityElements.put("UV1", ELEMENT_UV12); // 24
+		entityElements.put("Normal", NT); // 28
+		entityElements.put("iris_Entity", ENTITY_ID_ELEMENT); // 32
+		entityElements.put("mc_midTexCoord", MID_TEXTURE_ELEMENT_COMPRESSED); // 36
 
 		cloudsElements.put("Position", DefaultVertexFormat.ELEMENT_POSITION); // 12
 		cloudsElements.put("Color", DefaultVertexFormat.ELEMENT_COLOR); // 16

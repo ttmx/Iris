@@ -34,11 +34,11 @@ public class ShaderAttributeInputs {
 				tex = true;
 			}
 
-			if ("UV1".equals(name)) {
+			if ("UV1".equals(name) || entity) {
 				overlay = true;
 			}
 
-			if ("UV2".equals(name) && !isFullbright) {
+			if (("UV2".equals(name) || entity) && !isFullbright) {
 				light = true;
 			}
 

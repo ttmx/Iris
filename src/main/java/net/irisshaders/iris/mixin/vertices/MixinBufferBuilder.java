@@ -183,6 +183,34 @@ public abstract class MixinBufferBuilder extends DefaultedVertexConsumer impleme
 		return BufferVertexConsumer.super.uv(u, v);
 	}
 
+	@Unique
+	private byte uv0, uv1;
+
+	@Override
+	public VertexConsumer overlayCoords(int pBufferVertexConsumer0, int pInt1) {
+		if (extending && !iris$isTerrain) {
+			uv0 = (byte) (pBufferVertexConsumer0 & 0xFF);
+			uv1 = (byte) (pInt1 & 0xFF);
+			return this;
+		}
+		return BufferVertexConsumer.super.overlayCoords(pBufferVertexConsumer0, pInt1);
+	}
+
+	@Override
+	public VertexConsumer uv2(int pBufferVertexConsumer0, int pInt1) {
+		if (extending && !iris$isTerrain) {
+			this.putByte(0, uv0);
+			this.putByte(1, uv1);
+			uv0 = 0;
+			uv1 = 0;
+			this.putByte(2, (byte) (pBufferVertexConsumer0 & 0xFF));
+			this.putByte(3, (byte) (pInt1 & 0xFF));
+			this.nextElement();
+			return this;
+		}
+		return BufferVertexConsumer.super.uv2(pBufferVertexConsumer0, pInt1);
+	}
+
 	@Inject(method = "discard()V", at = @At("HEAD"))
 	private void iris$onDiscard(CallbackInfo ci) {
 		extending = false;

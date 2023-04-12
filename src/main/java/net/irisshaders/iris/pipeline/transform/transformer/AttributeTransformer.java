@@ -149,13 +149,13 @@ public class AttributeTransformer {
 				"uniform sampler2D iris_overlay;",
 				"out vec4 entityColor;",
 				"out vec4 iris_vertexColor;",
-				"in ivec2 iris_UV1;");
+				"in ivec4 iris_UV1;");
 
 			// Create our own main function to wrap the existing main function, so that we
 			// can pass through the overlay color at the end to the geometry or fragment
 			// stage.
 			tree.prependMainFunctionBody(t,
-				"vec4 overlayColor = texelFetch(iris_overlay, iris_UV1, 0);",
+				"vec4 overlayColor = texelFetch(iris_overlay, iris_UV1.xy, 0);",
 				"entityColor = vec4(overlayColor.rgb, 1.0 - overlayColor.a);",
 				"iris_vertexColor = iris_Color;",
 				// Workaround for a shader pack bug:

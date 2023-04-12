@@ -62,10 +62,16 @@ public class VanillaTransformer {
 			}
 
 			if (parameters.inputs.hasLight()) {
-				root.replaceReferenceExpressions(t, "gl_MultiTexCoord1",
-					"vec4(iris_UV2, 0.0, 1.0)");
-				tree.parseAndInjectNode(t, ASTInjectionPoint.BEFORE_DECLARATIONS,
-					"in ivec2 iris_UV2;");
+				if (parameters.inputs.isEntity()) {
+					root.replaceReferenceExpressions(t, "gl_MultiTexCoord1",
+						"vec4(iris_UV1.zw, 0.0, 1.0)");
+
+				} else {
+					root.replaceReferenceExpressions(t, "gl_MultiTexCoord1",
+						"vec4(iris_UV2, 0.0, 1.0)");
+					tree.parseAndInjectNode(t, ASTInjectionPoint.BEFORE_DECLARATIONS,
+						"in ivec2 iris_UV2;");
+				}
 			} else {
 				root.replaceReferenceExpressions(t, "gl_MultiTexCoord1",
 					"vec4(240.0, 240.0, 0.0, 1.0)");
@@ -294,7 +300,7 @@ public class VanillaTransformer {
 		root.rename("gl_Normal", "iris_NewNormal");
 		tree.parseAndInjectNodes(t, ASTInjectionPoint.BEFORE_FUNCTIONS,
 			// translated from sodium's chunk_vertex.glsl
-			"layout (location = 5) in vec4 iris_Normal;",
+			"in vec4 iris_Normal;",
 			"vec3 iris_NewNormal;",
 			"vec4 iris_tangent;",
 			"vec3 oct_to_vec(vec2 e) {" +
