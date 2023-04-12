@@ -27,16 +27,15 @@ public final class EntityVertex {
 	private static final int OFFSET_POSITION = 0;
 	private static final int OFFSET_COLOR = 12;
 	private static final int OFFSET_TEXTURE = 16;
-	private static final int OFFSET_MID_TEXTURE = 38;
+	private static final int OFFSET_MID_TEXTURE = 34;
 	private static final int OFFSET_OVERLAY = 20;
-	private static final int OFFSET_LIGHT = 24;
-	private static final int OFFSET_NORMAL = 28;
+	private static final int OFFSET_NORMAL = 24;
 
 	private static final Vector3f lastNormal = new Vector3f();
 	private static final QuadViewEntity.QuadViewEntityUnsafe quadView = new QuadViewEntity.QuadViewEntityUnsafe();
 
 	public static void write(long ptr,
-							 float x, float y, float z, int color, float u, float v, float midU, float midV, int light, int overlay, byte normalX, byte normalY, byte tangentX, byte tangentY) {
+							 float x, float y, float z, int color, float u, float v, float midU, float midV, byte lightX, byte lightY, byte lightZ, byte lightW, byte normalX, byte normalY, byte tangentX, byte tangentY) {
 		MemoryUtil.memPutFloat(ptr + OFFSET_POSITION, x);
 		MemoryUtil.memPutFloat(ptr + OFFSET_POSITION + 4, y);
 		MemoryUtil.memPutFloat(ptr + OFFSET_POSITION + 8, z);
@@ -46,9 +45,10 @@ public final class EntityVertex {
 		MemoryUtil.memPutShort(ptr + OFFSET_TEXTURE, XHFPModelVertexType.encodeBlockTexture(u));
 		MemoryUtil.memPutShort(ptr + OFFSET_TEXTURE + 2, XHFPModelVertexType.encodeBlockTexture(v));
 
-		MemoryUtil.memPutInt(ptr + OFFSET_LIGHT, light);
-
-		MemoryUtil.memPutInt(ptr + OFFSET_OVERLAY, overlay);
+		MemoryUtil.memPutByte(ptr + OFFSET_OVERLAY, lightX);
+		MemoryUtil.memPutByte(ptr + OFFSET_OVERLAY + 1, lightY);
+		MemoryUtil.memPutByte(ptr + OFFSET_OVERLAY + 2, lightZ);
+		MemoryUtil.memPutByte(ptr + OFFSET_OVERLAY + 3, lightW);
 
 		MemoryUtil.memPutByte(ptr + OFFSET_NORMAL, normalX);
 		MemoryUtil.memPutByte(ptr + OFFSET_NORMAL + 1, normalY);
@@ -58,9 +58,9 @@ public final class EntityVertex {
 		MemoryUtil.memPutShort(ptr + OFFSET_MID_TEXTURE, XHFPModelVertexType.encodeBlockTexture(midU));
 		MemoryUtil.memPutShort(ptr + OFFSET_MID_TEXTURE + 2, XHFPModelVertexType.encodeBlockTexture(midV));
 
-		MemoryUtil.memPutShort(ptr + 32, (short) CapturedRenderingState.INSTANCE.getCurrentRenderedEntity());
-		MemoryUtil.memPutShort(ptr + 34, (short) CapturedRenderingState.INSTANCE.getCurrentRenderedBlockEntity());
-		MemoryUtil.memPutShort(ptr + 36, (short) CapturedRenderingState.INSTANCE.getCurrentRenderedItem());
+		MemoryUtil.memPutShort(ptr + 28, (short) CapturedRenderingState.INSTANCE.getCurrentRenderedEntity());
+		MemoryUtil.memPutShort(ptr + 30, (short) CapturedRenderingState.INSTANCE.getCurrentRenderedBlockEntity());
+		MemoryUtil.memPutShort(ptr + 32, (short) CapturedRenderingState.INSTANCE.getCurrentRenderedItem());
 
 	}
 
@@ -94,6 +94,10 @@ public final class EntityVertex {
 			getTangent(nt, quad.getX(0), quad.getY(0), quad.getZ(0), quad.getTexU(0), quad.getTexV(0),
 				quad.getX(1), quad.getY(1), quad.getZ(1), quad.getTexU(1), quad.getTexV(1),
 				quad.getX(2), quad.getY(2), quad.getZ(2), quad.getTexU(2), quad.getTexV(2));
+			byte overlayX = (byte) (overlay & 0xFFFF);
+			byte overlayY = (byte) (overlay >> 16 & 0xFFFF);
+			byte lightX = (byte) (light & 0xFFFF);
+			byte lightY = (byte) (light >> 16 & 0xFFFF);
 
 			for (int i = 0; i < 4; i++) {
 				// The position vector
@@ -106,7 +110,7 @@ public final class EntityVertex {
 				float yt = MatrixHelper.transformPositionY(matPosition, x, y, z);
 				float zt = MatrixHelper.transformPositionZ(matPosition, x, y, z);
 
-				write(ptr, xt, yt, zt, color, quad.getTexU(i), quad.getTexV(i), midU, midV, light, overlay, normalConvX, normalConvY, tangentX, tangentY);
+				write(ptr, xt, yt, zt, color, quad.getTexU(i), quad.getTexV(i), midU, midV, overlayX, overlayY, lightX, lightY, normalConvX, normalConvY, tangentX, tangentY);
 				ptr += STRIDE;
 			}
 

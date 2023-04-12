@@ -172,7 +172,7 @@ public class MixinEntityRenderDispatcher {
 		float yt = MatrixHelper.transformPositionY(matPosition, x, y, z);
 		float zt = MatrixHelper.transformPositionZ(matPosition, x, y, z);
 
-		EntityVertex.write(ptr, xt, yt, zt, color, u, v, midU, midV, OverlayTexture.NO_OVERLAY, LightTexture.FULL_BRIGHT, (byte) 0, (byte) 0, (byte) 0, (byte) 0);
+		EntityVertex.write(ptr, xt, yt, zt, color, u, v, midU, midV, (byte) 0, (byte) 10, (byte) -16, (byte) -16, (byte) 0, (byte) 0, (byte) 0, (byte) 0);
 	}
 
 	private static void writeShadowVertex(long ptr, Matrix4f matPosition, float x, float y, float z, float u, float v, int color, int normal) {

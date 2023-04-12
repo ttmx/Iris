@@ -132,7 +132,10 @@ public class MixinModelPart {
 	private void compile(PoseStack.Pose matrices, VertexConsumer vertexConsumer, int light, int overlay, float red, float green, float blue, float alpha) {
 		var writer = VertexBufferWriter.of(vertexConsumer);
 		int color = ColorABGR.pack(red, green, blue, alpha);
-
+		byte overlayX = (byte) (overlay & 0xFFFF);
+		byte overlayY = (byte) (overlay >> 16 & 0xFFFF);
+		byte lightX = (byte) (light & 0xFFFF);
+		byte lightY = (byte) (light >> 16 & 0xFFFF);
 		boolean extend = shouldExtend();
 		for (ModelCuboid cuboid : this.sodium$cuboids) {
 			cuboid.updateVertices(matrices.pose());
@@ -168,7 +171,7 @@ public class MixinModelPart {
 						var tex = quad.textures[i];
 
 						if (extend) {
-							EntityVertex.write(ptr, pos.x, pos.y, pos.z, color, tex.x, tex.y, midU, midV, light, overlay, normalConvX, normalConvY, tangentX, tangentY);
+							EntityVertex.write(ptr, pos.x, pos.y, pos.z, color, tex.x, tex.y, midU, midV, overlayX, overlayY, lightX, lightY, normalConvX, normalConvY, tangentX, tangentY);
 						} else {
 							ModelVertex.write(ptr, pos.x, pos.y, pos.z, color, tex.x, tex.y, light, overlay, normal);
 						}
