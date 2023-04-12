@@ -2,12 +2,16 @@ package net.irisshaders.iris.pipeline.transform.transformer;
 
 import io.github.douira.glsl_transformer.ast.node.Identifier;
 import io.github.douira.glsl_transformer.ast.node.TranslationUnit;
+import io.github.douira.glsl_transformer.ast.node.abstract_node.ASTNode;
 import io.github.douira.glsl_transformer.ast.node.declaration.TypeAndInitDeclaration;
 import io.github.douira.glsl_transformer.ast.node.external_declaration.DeclarationExternalDeclaration;
+import io.github.douira.glsl_transformer.ast.node.external_declaration.ExternalDeclaration;
 import io.github.douira.glsl_transformer.ast.node.type.specifier.BuiltinNumericTypeSpecifier;
 import io.github.douira.glsl_transformer.ast.query.Root;
+import io.github.douira.glsl_transformer.ast.query.match.AutoHintedMatcher;
 import io.github.douira.glsl_transformer.ast.transform.ASTInjectionPoint;
 import io.github.douira.glsl_transformer.ast.transform.ASTParser;
+import io.github.douira.glsl_transformer.parser.ParseShape;
 import io.github.douira.glsl_transformer.util.Type;
 import net.irisshaders.iris.gl.shader.ShaderType;
 import net.irisshaders.iris.pipeline.AlphaTests;
@@ -28,7 +32,11 @@ public class VanillaTransformer {
 		}
 
 		if (parameters.inputs.isEntity()) {
-			replaceMidTexCoord(t, tree, root, textureScale);
+			if (parameters.type.glShaderType == ShaderType.VERTEX) {
+				replaceMidTexCoord(t, tree, root, textureScale);
+				injectVertInit(t, tree, root, parameters);
+
+			}
 		}
 
 		CommonTransformer.transform(t, tree, root, parameters, false);
@@ -99,7 +107,7 @@ public class VanillaTransformer {
 		}
 
 		if (parameters.type.glShaderType == ShaderType.VERTEX) {
-			if (parameters.inputs.hasNormal()) {
+			if (parameters.inputs.hasNormal() && !parameters.inputs.isEntity()) {
 				if (!parameters.inputs.isNewLines()) {
 					root.rename("gl_Normal", "iris_Normal");
 				} else {
@@ -107,8 +115,10 @@ public class VanillaTransformer {
 						"vec3(0.0, 0.0, 1.0)");
 				}
 
-				tree.parseAndInjectNode(t, ASTInjectionPoint.BEFORE_DECLARATIONS,
-					"in vec3 iris_Normal;");
+				if (!parameters.inputs.isEntity()) {
+					tree.parseAndInjectNode(t, ASTInjectionPoint.BEFORE_DECLARATIONS,
+						"in vec3 iris_Normal;");
+				}
 			} else {
 				root.replaceReferenceExpressions(t, "gl_Normal",
 					"vec3(0.0, 0.0, 1.0)");
@@ -272,5 +282,36 @@ public class VanillaTransformer {
 		}
 
 		tree.parseAndInjectNode(t, ASTInjectionPoint.BEFORE_DECLARATIONS, "in vec2 mc_midTexCoord;");
+	}
+
+	public static void injectVertInit(
+		ASTParser t,
+		TranslationUnit tree,
+		Root root,
+		VanillaParameters parameters) {
+
+		root.replaceReferenceExpressions(t, "at_tangent", "iris_tangent");
+		root.rename("gl_Normal", "iris_NewNormal");
+		tree.parseAndInjectNodes(t, ASTInjectionPoint.BEFORE_FUNCTIONS,
+			// translated from sodium's chunk_vertex.glsl
+			"layout (location = 5) in vec4 iris_Normal;",
+			"vec3 iris_NewNormal;",
+			"vec4 iris_tangent;",
+			"vec3 oct_to_vec(vec2 e) {" +
+				"    vec3 v = vec3(e.xy, 1.0 - abs(e.x) - abs(e.y));" +
+				"    float t = max(-v.z, 0.0);" +
+				"    v.xy += t * -sign(v.xy);" +
+				"    return v;" +
+				"}",
+			"vec4 iris_getTangent(vec2 tangent_encoded) {" +
+				"    vec2 encode = vec2(tangent_encoded.x, abs(tangent_encoded.y) * 2.0 - 1.0);" +
+				"    vec3 tangent_real = oct_to_vec(encode);" +
+				"    float binormal_sign = sign(tangent_encoded.y);" +
+				"    return vec4(tangent_real, binormal_sign);" +
+				"}",
+			"void _vert_init() {" +
+				"iris_NewNormal = oct_to_vec(iris_Normal.xy);" +
+				"iris_tangent = iris_getTangent(iris_Normal.zw); }");
+		tree.prependMainFunctionBody(t, "_vert_init();");
 	}
 }

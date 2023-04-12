@@ -17,10 +17,10 @@ public class ShaderAttributeInputs {
 	// WARNING: adding new fields requires updating hashCode and equals methods!
 
 	public ShaderAttributeInputs(VertexFormat format, boolean isFullbright, boolean isLines, boolean glint) {
-		if (format == DefaultVertexFormat.POSITION_COLOR_NORMAL && !isLines) {
-			newLines = true;
-		} else if (format == IrisVertexFormats.ENTITY) {
+		if (format == IrisVertexFormats.ENTITY) {
 			entity = true;
+		} else if (format == DefaultVertexFormat.POSITION_COLOR_NORMAL && !isLines) {
+			newLines = true;
 		}
 
 		this.glint = glint;
@@ -42,7 +42,7 @@ public class ShaderAttributeInputs {
 				light = true;
 			}
 
-			if ("Normal".equals(name)) {
+			if ("Normal".equals(name) || entity) {
 				normal = true;
 			}
 		});

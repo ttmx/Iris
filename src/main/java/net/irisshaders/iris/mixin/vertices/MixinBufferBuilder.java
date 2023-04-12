@@ -15,9 +15,12 @@ import net.irisshaders.iris.vertices.ExtendedDataHelper;
 import net.irisshaders.iris.vertices.ExtendingBufferBuilder;
 import net.irisshaders.iris.vertices.IrisVertexFormats;
 import net.irisshaders.iris.vertices.NormalHelper;
+import net.minecraft.util.Mth;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Math;
 import org.joml.Vector3f;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -94,6 +97,21 @@ public abstract class MixinBufferBuilder extends DefaultedVertexConsumer impleme
 	@Shadow
 	protected abstract void switchFormat(VertexFormat arg);
 
+	@Shadow
+	public abstract void nextElement();
+
+	@Shadow
+	public abstract void putByte(int pBufferBuilder0, byte pByte1);
+
+	@Shadow
+	private int vertices;
+
+	@Shadow
+	protected abstract void ensureVertexCapacity();
+
+	@Shadow
+	private int elementIndex;
+
 	@Override
 	public void iris$beginWithoutExtending(VertexFormat.Mode drawMode, VertexFormat vertexFormat) {
 		iris$shouldNotExtend = true;
@@ -137,6 +155,19 @@ public abstract class MixinBufferBuilder extends DefaultedVertexConsumer impleme
 			}
 		}
 		return arg;
+	}
+
+	@Override
+	public VertexConsumer normal(float pBufferVertexConsumer0, float pFloat1, float pFloat2) {
+		if (extending && !iris$isTerrain) {
+			this.putByte(0, (byte) 1);
+			this.putByte(1, (byte) 1);
+			this.putByte(2, (byte) 1);
+			this.putByte(3, (byte) 1);
+			this.nextElement();
+			return this;
+		}
+		return BufferVertexConsumer.super.normal(pBufferVertexConsumer0, pFloat1, pFloat2);
 	}
 
 	@Override
@@ -201,10 +232,11 @@ public abstract class MixinBufferBuilder extends DefaultedVertexConsumer impleme
 			this.putShort(2, (short) 0);
 		}
 		this.nextElement();
-		// TANGENT_ELEMENT
-		this.putInt(0, 0);
-		this.nextElement();
+
 		if (iris$isTerrain) {
+			// TANGENT_ELEMENT
+			this.putInt(0, 0);
+			this.nextElement();
 			// MID_BLOCK_ELEMENT
 			int posIndex = this.nextElementByte - 48;
 			float x = buffer.getFloat(posIndex);
@@ -221,10 +253,94 @@ public abstract class MixinBufferBuilder extends DefaultedVertexConsumer impleme
 		}
 	}
 
+	private static float unpackX(int norm) {
+		return (float)((byte)(norm & 255)) * 0.007874016F;
+	}
+
+	private static float unpackY(int norm) {
+		return (float)((byte)(norm >> 8 & 255)) * 0.007874016F;
+	}
+
+	private static float unpackZ(int norm) {
+		return (float)((byte)(norm >> 16 & 255)) * 0.007874016F;
+	}
+
+	private static float unpackW(int norm) {
+		return (float)((byte)(norm >> 24 & 255)) * 0.007874016F;
+	}
+
+	private void vec_to_oct(int value)
+	{
+		float valueX = unpackX(value);
+		float valueY = unpackY(value);
+		float valueZ = unpackZ(value);
+
+		float invL1Norm = 1.0f / (Math.abs(valueX) + Math.abs(valueY) + Math.abs(valueZ));
+		float resX = 0.0f, resY = 0.0f;
+		if (valueZ < 0.0f) {
+			resX = (1.0f - Math.abs(valueY * invL1Norm)) * Mth.sign(valueX);
+			resY = (1.0f - Math.abs(valueX * invL1Norm)) * Mth.sign(valueY);
+		} else {
+			resX = valueX * invL1Norm;
+			resY = valueY * invL1Norm;
+		}
+
+		normalX = floatToSnorm8(resX);
+		normalY = floatToSnorm8(resY);
+	}
+	private static float bias = 1.0f / (2^(8 - 1) - 1);
+	private void vec_to_tangent(int value) {
+		//encode to octahedron, result in range [-1, 1]
+		float valueX = unpackX(value);
+		float valueY = unpackY(value);
+		float valueZ = unpackZ(value);
+		float valueW = unpackW(value);
+
+		float invL1Norm = 1.0f / (Math.abs(valueX) + Math.abs(valueY) + Math.abs(valueZ));
+		float resX = 0.0f, resY = 0.0f;
+		if (valueZ < 0.0f) {
+			resX = (1.0f - Math.abs(valueY * invL1Norm)) * Mth.sign(valueX);
+			resY = (1.0f - Math.abs(valueX * invL1Norm)) * Mth.sign(valueY);
+		} else {
+			resX = valueX * invL1Norm;
+			resY = valueY * invL1Norm;
+		}
+
+		// map y to always be positive
+		resY = resY * 0.5f + 0.5f;
+
+		// add a bias so that y is never 0 (sign in the vertex shader)
+		if (resY < bias)
+			resY = bias;
+
+		// Apply the sign of the binormal to y, which was computed elsewhere
+		if (valueW < 0)
+			resY *= -1;
+
+		tangentX = floatToSnorm8(resX);
+		tangentY = floatToSnorm8(resY);
+	}
+
+	private static byte floatToSnorm8( float v )
+	{
+		//According to D3D10 rules, the value "-1.0f" has two representations:
+		//  0x1000 and 0x10001
+		//This allows everyone to convert by just multiplying by 32767 instead
+		//of multiplying the negative values by 32768 and 32767 for positive.
+		return (byte) Math.clamp( v >= 0.0f ?
+				(v * 127.0f + 0.5f) :
+				(v * 127.0f - 0.5f),
+			-128.0f,
+			127.0f );
+	}
+
 	@Unique
 	private static short encodeBlockTexture(float value) {
 		return (short) (Math.min(0.99999997F, value) * 65536);
 	}
+
+	@Unique
+	private byte normalX, normalY, tangentX, tangentY;
 
 	@Unique
 	private void fillExtendedData(int vertexAmount) {
@@ -250,7 +366,7 @@ public abstract class MixinBufferBuilder extends DefaultedVertexConsumer impleme
 		int midUOffset;
 		int midVOffset;
 		int normalOffset;
-		int tangentOffset;
+		int tangentOffset = 0;
 
 		if (!iris$isTerrain) {
 			//System.out.println(midU + " " + midV);
@@ -261,22 +377,28 @@ public abstract class MixinBufferBuilder extends DefaultedVertexConsumer impleme
 			normalOffset = 24;
 			tangentOffset = 8;
 		} else {
-			midUOffset = 8;
-			midVOffset = 6;
-			normalOffset = 18;
-			tangentOffset = 4;
+			midUOffset = 4;
+			midVOffset = 2;
+			normalOffset = 14;
 		}
 
 		for (int vertex = 0; vertex < vertexAmount; vertex++) {
 			if (iris$isTerrain) {
 				buffer.putFloat(nextElementByte - midUOffset - stride * vertex, midU);
 				buffer.putFloat(nextElementByte - midVOffset - stride * vertex, midV);
+				buffer.putInt(nextElementByte - normalOffset - stride * vertex, packedNormal);
+				buffer.putInt(nextElementByte - tangentOffset - stride * vertex, tangent);
 			} else {
+				vec_to_oct(packedNormal);
+				vec_to_tangent(tangent);
 				buffer.putShort(nextElementByte - midUOffset - stride * vertex, encodeBlockTexture(midU));
 				buffer.putShort(nextElementByte - midVOffset - stride * vertex, encodeBlockTexture(midV));
+				buffer.put(nextElementByte - normalOffset - stride * vertex, normalX);
+				buffer.put(nextElementByte - (normalOffset - 1) - stride * vertex, normalY);
+				buffer.put(nextElementByte - (normalOffset - 2) - stride * vertex, tangentX);
+				buffer.put(nextElementByte - (normalOffset - 3) - stride * vertex, tangentY);
 			}
-			buffer.putInt(nextElementByte - normalOffset - stride * vertex, packedNormal);
-			buffer.putInt(nextElementByte - tangentOffset - stride * vertex, tangent);
+
 		}
 
 		midU = 0f;
