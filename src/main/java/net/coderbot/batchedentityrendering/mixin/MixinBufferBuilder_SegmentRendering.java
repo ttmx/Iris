@@ -44,6 +44,11 @@ public class MixinBufferBuilder_SegmentRendering implements BufferBuilderExt {
 		dupeNextVertex = true;
 	}
 
+	@Override
+	public VertexFormat getFormat() {
+		return this.format;
+	}
+
 	private void duplicateLastVertex() {
 		int i = this.format.getVertexSize();
 		this.buffer.put(this.nextElementByte, this.buffer, this.nextElementByte - i, i);

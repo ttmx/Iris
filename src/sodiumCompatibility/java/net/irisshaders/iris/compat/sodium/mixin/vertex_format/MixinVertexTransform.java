@@ -26,7 +26,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public class MixinVertexTransform {
 	private static int entityId = VertexFormatRegistry.get(IrisVertexFormats.ENTITY).id;
 
-	@Inject(method = "transformOverlay", at = @At("HEAD"), cancellable = true)
+	@Inject(method = "transformOverlay", at = @At("HEAD"), cancellable = true, remap = false)
 	private static void transformOverlayRedirect(long ptr, int count, VertexFormatDescription format, Matrix3f inverseNormalMatrix, Matrix4f inverseTextureMatrix, float textureScale, CallbackInfo ci) {
 		if (format.id == entityId) {
 			ci.cancel();
@@ -61,7 +61,6 @@ public class MixinVertexTransform {
 												  Matrix3f inverseNormalMatrix, Matrix4f inverseTextureMatrix, float textureScale) {
 		var offsetPosition = format.getOffset(CommonVertexElement.POSITION);
 		var offsetColor = format.getOffset(CommonVertexElement.COLOR);
-		var offsetNormal = format.getOffset(CommonVertexElement.NORMAL);
 		var offsetTexture = format.getOffset(IrisCommonVertexElements.TEXTURE_COMPRESSED);
 
 		int color = ColorABGR.pack(1.0f, 1.0f, 1.0f, 1.0f);

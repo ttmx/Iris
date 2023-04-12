@@ -144,7 +144,7 @@ public class MixinModelPart {
 				for (ModelCuboid.Quad quad : cuboid.quads) {
 					if (quad == null) continue;
 					var normal = quad.getNormal(matrices.normal());
-
+					EntityVertex.lastNormalHeld = normal;
 					float midU = 0, midV = 0;
 
 					if (extend) {
@@ -177,6 +177,8 @@ public class MixinModelPart {
 				}
 
 				writer.push(stack, buffer, 4 * 6, extend ? EntityVertex.FORMAT : ModelVertex.FORMAT);
+				EntityVertex.lastNormalHeld = 0;
+
 			}
 		}
 	}

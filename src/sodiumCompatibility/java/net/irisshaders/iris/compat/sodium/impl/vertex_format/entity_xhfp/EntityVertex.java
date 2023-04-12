@@ -1,5 +1,7 @@
 package net.irisshaders.iris.compat.sodium.impl.vertex_format.entity_xhfp;
 
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
 import me.jellysquid.mods.sodium.client.model.quad.ModelQuadView;
 import me.jellysquid.mods.sodium.client.render.RenderGlobal;
@@ -8,6 +10,7 @@ import me.jellysquid.mods.sodium.client.render.vertex.VertexFormatDescription;
 import me.jellysquid.mods.sodium.client.render.vertex.VertexFormatRegistry;
 import me.jellysquid.mods.sodium.client.util.Norm3b;
 import me.jellysquid.mods.sodium.common.util.MatrixHelper;
+import net.coderbot.batchedentityrendering.impl.BufferBuilderExt;
 import net.irisshaders.iris.compat.sodium.impl.vertex_format.terrain_xhfp.XHFPModelVertexType;
 import net.irisshaders.iris.uniforms.CapturedRenderingState;
 import net.irisshaders.iris.vertices.IrisVertexFormats;

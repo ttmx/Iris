@@ -1,12 +1,16 @@
 package net.irisshaders.iris.compat.sodium.mixin.vertex_format.entity;
 
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
 import me.jellysquid.mods.sodium.client.model.quad.ModelQuadView;
 import me.jellysquid.mods.sodium.client.render.vertex.VertexBufferWriter;
 import me.jellysquid.mods.sodium.client.render.vertex.formats.ModelVertex;
+import net.coderbot.batchedentityrendering.impl.BufferBuilderExt;
 import net.irisshaders.iris.compat.sodium.impl.vertex_format.entity_xhfp.EntityVertex;
 import net.irisshaders.iris.vertices.ImmediateState;
 import net.irisshaders.iris.api.v0.IrisApi;
+import net.irisshaders.iris.vertices.IrisVertexFormats;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -17,8 +21,18 @@ public class MixinModelVertex {
 	@Inject(method = "writeQuadVertices", at = @At("HEAD"), cancellable = true)
 	private static void redirect2(VertexBufferWriter writer, PoseStack.Pose matrices, ModelQuadView quad, int light, int overlay, int color, CallbackInfo ci) {
 		if (shouldBeExtended()) {
-			ci.cancel();
-			EntityVertex.writeQuadVertices(writer, matrices, quad, light, overlay, color);
+			// Russian roulette
+			if (writer instanceof BufferBuilder builder) {
+				if (((BufferBuilderExt) builder).getFormat() == IrisVertexFormats.ENTITY) {
+					// We know we're safe
+					ci.cancel();
+					EntityVertex.writeQuadVertices(writer, matrices, quad, light, overlay, color);
+				}
+			} else {
+				// Hope
+				ci.cancel();
+				EntityVertex.writeQuadVertices(writer, matrices, quad, light, overlay, color);
+			}
 		}
 	}
 
