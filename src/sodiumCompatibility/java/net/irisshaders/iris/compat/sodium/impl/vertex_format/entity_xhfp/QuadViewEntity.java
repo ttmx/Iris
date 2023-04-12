@@ -1,5 +1,6 @@
 package net.irisshaders.iris.compat.sodium.impl.vertex_format.entity_xhfp;
 
+import net.irisshaders.iris.compat.sodium.impl.vertex_format.terrain_xhfp.XHFPModelVertexType;
 import net.irisshaders.iris.vertices.QuadView;
 import org.lwjgl.system.MemoryUtil;
 
@@ -26,15 +27,16 @@ public abstract class QuadViewEntity implements QuadView {
 
 	@Override
 	public float u(int index) {
-		return getFloat(writePointer + 16 - stride * (3L - index));
+		return XHFPModelVertexType.decodeBlockTexture(getShort(writePointer + 16 - stride * (3L - index)));
 	}
 
 	@Override
 	public float v(int index) {
-		return getFloat(writePointer + 20 - stride * (3L - index));
+		return XHFPModelVertexType.decodeBlockTexture(getShort(writePointer + 18 - stride * (3L - index)));
 	}
 
 	abstract float getFloat(long writePointer);
+	abstract short getShort(long writePointer);
 
 	public static class QuadViewEntityUnsafe extends QuadViewEntity {
 		public void setup(long writePointer, int stride) {
@@ -45,6 +47,11 @@ public abstract class QuadViewEntity implements QuadView {
 		@Override
 		float getFloat(long writePointer) {
 			return MemoryUtil.memGetFloat(writePointer);
+		}
+
+		@Override
+		short getShort(long writePointer) {
+			return MemoryUtil.memGetShort(writePointer);
 		}
 	}
 
@@ -60,6 +67,11 @@ public abstract class QuadViewEntity implements QuadView {
 		@Override
 		float getFloat(long writePointer) {
 			return buffer.getFloat((int) writePointer);
+		}
+
+		@Override
+		short getShort(long writePointer) {
+			return buffer.getShort((int) writePointer);
 		}
 	}
 }

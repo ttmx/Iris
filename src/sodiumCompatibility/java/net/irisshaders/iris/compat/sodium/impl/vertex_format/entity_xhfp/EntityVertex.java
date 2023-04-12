@@ -94,10 +94,10 @@ public final class EntityVertex {
 			getTangent(nt, quad.getX(0), quad.getY(0), quad.getZ(0), quad.getTexU(0), quad.getTexV(0),
 				quad.getX(1), quad.getY(1), quad.getZ(1), quad.getTexU(1), quad.getTexV(1),
 				quad.getX(2), quad.getY(2), quad.getZ(2), quad.getTexU(2), quad.getTexV(2));
-			byte overlayX = (byte) (overlay & 0xFFFF);
-			byte overlayY = (byte) (overlay >> 16 & 0xFFFF);
-			byte lightX = (byte) (light & 0xFFFF);
-			byte lightY = (byte) (light >> 16 & 0xFFFF);
+			byte overlayX = (byte) (overlay & 0xFF);
+			byte overlayY = (byte) (overlay >> 16 & 0xFF);
+			byte lightX = (byte) (light & 0xFF);
+			byte lightY = (byte) (light >> 16 & 0xFF);
 
 			for (int i = 0; i < 4; i++) {
 				// The position vector
