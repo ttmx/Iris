@@ -64,6 +64,8 @@ public final class EntityVertex {
 
 	}
 
+	public static int lastNormalHeld;
+
 	public static void writeQuadVertices(VertexBufferWriter writer, PoseStack.Pose matrices, ModelQuadView quad, int light, int overlay, int color) {
 		Matrix3f matNormal = matrices.normal();
 		Matrix4f matPosition = matrices.pose();
@@ -116,7 +118,9 @@ public final class EntityVertex {
 
 			endQuad(ptr - STRIDE, nxt, nyt, nzt);
 
+			lastNormalHeld = nt;
 			writer.push(stack, buffer, 4, FORMAT);
+			lastNormalHeld = 0;
 		}
 	}
 
