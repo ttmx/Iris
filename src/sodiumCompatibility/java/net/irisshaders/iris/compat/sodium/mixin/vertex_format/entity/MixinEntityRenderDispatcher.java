@@ -51,10 +51,6 @@ public class MixinEntityRenderDispatcher {
 	}
 	private static float bias = 1.0f / (2^(8 - 1) - 1);
 
-	private static float unpackW(int norm) {
-		return (float)((byte)(norm >> 24 & 255)) * 0.007874016F;
-	}
-
 	private static byte floatToSnorm8( float v )
 	{
 		//According to D3D10 rules, the value "-1.0f" has two representations:
@@ -96,6 +92,8 @@ public class MixinEntityRenderDispatcher {
 		tangentY = floatToSnorm8(resY);
 	}
 
+
+
 	/**
 	 * @author IMS
 	 * @reason Overwrite shadow rendering with our own
@@ -119,7 +117,7 @@ public class MixinEntityRenderDispatcher {
 		boolean extended = shouldBeExtended();
 
 		if (extended) {
-			normal = getTangent(normal, minX, minY, minZ, u1, v1,
+			getTangent(normal, minX, minY, minZ, u1, v1,
 				minX, minY, maxZ, u1, v2,
 				maxX, minY, maxZ, u2, v2
 			);
@@ -170,7 +168,7 @@ public class MixinEntityRenderDispatcher {
 		float yt = MatrixHelper.transformPositionY(matPosition, x, y, z);
 		float zt = MatrixHelper.transformPositionZ(matPosition, x, y, z);
 
-		EntityVertex.write(ptr, xt, yt, zt, color, u, v, midU, midV, (byte) 0, (byte) 10, (byte) -16, (byte) -16, (byte) 0, (byte) 0, (byte) 0, (byte) 0);
+		EntityVertex.write(ptr, xt, yt, zt, color, u, v, midU, midV, (byte) 0, (byte) 10, (byte) -16, (byte) -16, normalConvX, normalConvY, tangentX, tangentY);
 	}
 
 	private static void writeShadowVertex(long ptr, Matrix4f matPosition, float x, float y, float z, float u, float v, int color, int normal) {
@@ -186,7 +184,7 @@ public class MixinEntityRenderDispatcher {
 		return IrisApi.getInstance().isShaderPackInUse() && ImmediateState.renderWithExtendedVertexFormat;
 	}
 
-	private static int getTangent(int normal, float x0, float y0, float z0, float u0, float v0, float x1, float y1, float z1, float u1, float v1, float x2, float y2, float z2, float u2, float v2) {
+	private static void getTangent(int normal, float x0, float y0, float z0, float u0, float v0, float x1, float y1, float z1, float u1, float v1, float x2, float y2, float z2, float u2, float v2) {
 		// Capture all of the relevant vertex positions
 
 		float normalX = Norm3b.unpackX(normal);
@@ -256,7 +254,6 @@ public class MixinEntityRenderDispatcher {
 
 		vec_to_oct(normal);
 		vec_to_tangent(tangentx, tangenty, tangentz, tangentW);
-		return NormalHelper.packNormal(normalConvX, normalConvY, tangentX, tangentY);
 	}
 
 	private static float rsqrt(float value) {

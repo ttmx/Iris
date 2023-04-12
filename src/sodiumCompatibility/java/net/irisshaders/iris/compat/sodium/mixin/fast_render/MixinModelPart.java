@@ -79,10 +79,6 @@ public class MixinModelPart {
 	}
 	private static float bias = 1.0f / (2^(8 - 1) - 1);
 
-	private static float unpackW(int norm) {
-		return (float)((byte)(norm >> 24 & 255)) * 0.007874016F;
-	}
-
 	private static byte floatToSnorm8( float v )
 	{
 		//According to D3D10 rules, the value "-1.0f" has two representations:
