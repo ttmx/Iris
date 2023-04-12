@@ -118,8 +118,6 @@ public class MixinEntityRenderDispatcher {
 
 		boolean extended = shouldBeExtended();
 
-		int tangent = 0;
-
 		if (extended) {
 			normal = getTangent(normal, minX, minY, minZ, u1, v1,
 				minX, minY, maxZ, u1, v2,
