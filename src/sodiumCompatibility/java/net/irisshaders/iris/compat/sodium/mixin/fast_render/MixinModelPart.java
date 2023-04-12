@@ -138,11 +138,10 @@ public class MixinModelPart {
 
 
 			try (MemoryStack stack = RenderGlobal.VERTEX_DATA.push()) {
-				long buffer = stack.nmalloc(4 * 6 * (extend ? EntityVertex.STRIDE : ModelVertex.STRIDE));
-				long ptr = buffer;
-
 				for (ModelCuboid.Quad quad : cuboid.quads) {
 					if (quad == null) continue;
+					long buffer = stack.nmalloc(4 * (extend ? EntityVertex.STRIDE : ModelVertex.STRIDE));
+					long ptr = buffer;
 					var normal = quad.getNormal(matrices.normal());
 					EntityVertex.lastNormalHeld = normal;
 					float midU = 0, midV = 0;
@@ -174,9 +173,10 @@ public class MixinModelPart {
 
 						ptr += extend ? EntityVertex.STRIDE : ModelVertex.STRIDE;
 					}
+
+					writer.push(stack, buffer, 4, extend ? EntityVertex.FORMAT : ModelVertex.FORMAT);
 				}
 
-				writer.push(stack, buffer, 4 * 6, extend ? EntityVertex.FORMAT : ModelVertex.FORMAT);
 				EntityVertex.lastNormalHeld = 0;
 
 			}
