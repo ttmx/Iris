@@ -14,6 +14,8 @@ import net.irisshaders.iris.vertices.ImmediateState;
 import net.irisshaders.iris.vertices.NormalHelper;
 import net.irisshaders.iris.api.v0.IrisApi;
 import net.minecraft.client.model.geom.ModelPart;
+import net.minecraft.util.Mth;
+import org.joml.Math;
 import org.lwjgl.system.MemoryStack;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
@@ -54,6 +56,74 @@ public class MixinModelPart {
 		this.sodium$cuboids = copies;
 	}
 
+	private byte normalConvX, normalConvY, tangentX, tangentY;
+
+	private void vec_to_oct(int value)
+	{
+		float valueX = Norm3b.unpackX(value);
+		float valueY = Norm3b.unpackY(value);
+		float valueZ = Norm3b.unpackZ(value);
+
+		float invL1Norm = 1.0f / (Math.abs(valueX) + Math.abs(valueY) + Math.abs(valueZ));
+		float resX = 0.0f, resY = 0.0f;
+		if (valueZ < 0.0f) {
+			resX = (1.0f - Math.abs(valueY * invL1Norm)) * Mth.sign(valueX);
+			resY = (1.0f - Math.abs(valueX * invL1Norm)) * Mth.sign(valueY);
+		} else {
+			resX = valueX * invL1Norm;
+			resY = valueY * invL1Norm;
+		}
+
+		normalConvX = floatToSnorm8(resX);
+		normalConvY = floatToSnorm8(resY);
+	}
+	private static float bias = 1.0f / (2^(8 - 1) - 1);
+
+	private static float unpackW(int norm) {
+		return (float)((byte)(norm >> 24 & 255)) * 0.007874016F;
+	}
+
+	private static byte floatToSnorm8( float v )
+	{
+		//According to D3D10 rules, the value "-1.0f" has two representations:
+		//  0x1000 and 0x10001
+		//This allows everyone to convert by just multiplying by 32767 instead
+		//of multiplying the negative values by 32768 and 32767 for positive.
+		return (byte) Math.clamp( v >= 0.0f ?
+				(v * 127.0f + 0.5f) :
+				(v * 127.0f - 0.5f),
+			-128.0f,
+			127.0f );
+	}
+
+
+	private void vec_to_tangent(float valueX, float valueY, float valueZ, float valueW) {
+		//encode to octahedron, result in range [-1, 1]
+		float invL1Norm = 1.0f / (Math.abs(valueX) + Math.abs(valueY) + Math.abs(valueZ));
+		float resX = 0.0f, resY = 0.0f;
+		if (valueZ < 0.0f) {
+			resX = (1.0f - Math.abs(valueY * invL1Norm)) * Mth.sign(valueX);
+			resY = (1.0f - Math.abs(valueX * invL1Norm)) * Mth.sign(valueY);
+		} else {
+			resX = valueX * invL1Norm;
+			resY = valueY * invL1Norm;
+		}
+
+		// map y to always be positive
+		resY = resY * 0.5f + 0.5f;
+
+		// add a bias so that y is never 0 (sign in the vertex shader)
+		if (resY < bias)
+			resY = bias;
+
+		// Apply the sign of the binormal to y, which was computed elsewhere
+		if (valueW < 0)
+			resY *= -1;
+
+		tangentX = floatToSnorm8(resX);
+		tangentY = floatToSnorm8(resY);
+	}
+
 	/**
 	 * @author JellySquid
 	 * @reason Use optimized vertex writer, avoid allocations, use quick matrix transformations
@@ -77,7 +147,6 @@ public class MixinModelPart {
 					var normal = quad.getNormal(matrices.normal());
 
 					float midU = 0, midV = 0;
-					int tangent = 0;
 
 					if (extend) {
 						for (int i = 0; i < 4; i++) {
@@ -88,7 +157,7 @@ public class MixinModelPart {
 						midU *= 0.25;
 						midV *= 0.25;
 
-						tangent = getTangent(normal, quad.positions[0].x, quad.positions[0].y, quad.positions[0].z, quad.textures[0].x, quad.textures[0].y,
+						getTangent(normal, quad.positions[0].x, quad.positions[0].y, quad.positions[0].z, quad.textures[0].x, quad.textures[0].y,
 							quad.positions[1].x, quad.positions[1].y, quad.positions[1].z, quad.textures[1].x, quad.textures[1].y,
 							quad.positions[2].x, quad.positions[2].y, quad.positions[2].z, quad.textures[2].x, quad.textures[2].y
 						);
@@ -99,7 +168,7 @@ public class MixinModelPart {
 						var tex = quad.textures[i];
 
 						if (extend) {
-							EntityVertex.write(ptr, pos.x, pos.y, pos.z, color, tex.x, tex.y, midU, midV, light, overlay, normal, tangent);
+							EntityVertex.write(ptr, pos.x, pos.y, pos.z, color, tex.x, tex.y, midU, midV, light, overlay, normalConvX, normalConvY, tangentX, tangentY);
 						} else {
 							ModelVertex.write(ptr, pos.x, pos.y, pos.z, color, tex.x, tex.y, light, overlay, normal);
 						}
@@ -113,7 +182,7 @@ public class MixinModelPart {
 		}
 	}
 
-	private int getTangent(int normal, float x0, float y0, float z0, float u0, float v0, float x1, float y1, float z1, float u1, float v1, float x2, float y2, float z2, float u2, float v2) {
+	private void getTangent(int normal, float x0, float y0, float z0, float u0, float v0, float x1, float y1, float z1, float u1, float v1, float x2, float y2, float z2, float u2, float v2) {
 		// Capture all of the relevant vertex positions
 
 		float normalX = Norm3b.unpackX(normal);
@@ -181,6 +250,7 @@ public class MixinModelPart {
 			tangentW = 1.0F;
 		}
 
-		return NormalHelper.packNormal(tangentx, tangenty, tangentz, tangentW);
+		vec_to_oct(normal);
+		vec_to_tangent(tangentx, tangenty, tangentz, tangentW);
 	}
 }

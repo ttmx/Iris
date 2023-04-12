@@ -15,6 +15,8 @@ import net.irisshaders.iris.api.v0.IrisApi;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.entity.EntityRenderDispatcher;
 import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.util.Mth;
+import org.joml.Math;
 import org.joml.Matrix4f;
 import org.lwjgl.system.MemoryStack;
 import org.spongepowered.asm.mixin.Mixin;
@@ -25,6 +27,74 @@ import org.spongepowered.asm.mixin.Unique;
 public class MixinEntityRenderDispatcher {
 	@Unique
 	private static final int SHADOW_COLOR = ColorABGR.pack(1.0f, 1.0f, 1.0f);
+
+	private static byte normalConvX, normalConvY, tangentX, tangentY;
+
+	private static void vec_to_oct(int value)
+	{
+		float valueX = Norm3b.unpackX(value);
+		float valueY = Norm3b.unpackY(value);
+		float valueZ = Norm3b.unpackZ(value);
+
+		float invL1Norm = 1.0f / (Math.abs(valueX) + Math.abs(valueY) + Math.abs(valueZ));
+		float resX = 0.0f, resY = 0.0f;
+		if (valueZ < 0.0f) {
+			resX = (1.0f - Math.abs(valueY * invL1Norm)) * Mth.sign(valueX);
+			resY = (1.0f - Math.abs(valueX * invL1Norm)) * Mth.sign(valueY);
+		} else {
+			resX = valueX * invL1Norm;
+			resY = valueY * invL1Norm;
+		}
+
+		normalConvX = floatToSnorm8(resX);
+		normalConvY = floatToSnorm8(resY);
+	}
+	private static float bias = 1.0f / (2^(8 - 1) - 1);
+
+	private static float unpackW(int norm) {
+		return (float)((byte)(norm >> 24 & 255)) * 0.007874016F;
+	}
+
+	private static byte floatToSnorm8( float v )
+	{
+		//According to D3D10 rules, the value "-1.0f" has two representations:
+		//  0x1000 and 0x10001
+		//This allows everyone to convert by just multiplying by 32767 instead
+		//of multiplying the negative values by 32768 and 32767 for positive.
+		return (byte) Math.clamp( v >= 0.0f ?
+				(v * 127.0f + 0.5f) :
+				(v * 127.0f - 0.5f),
+			-128.0f,
+			127.0f );
+	}
+
+
+	private static void vec_to_tangent(float valueX, float valueY, float valueZ, float valueW) {
+		//encode to octahedron, result in range [-1, 1]
+		float invL1Norm = 1.0f / (Math.abs(valueX) + Math.abs(valueY) + Math.abs(valueZ));
+		float resX = 0.0f, resY = 0.0f;
+		if (valueZ < 0.0f) {
+			resX = (1.0f - Math.abs(valueY * invL1Norm)) * Mth.sign(valueX);
+			resY = (1.0f - Math.abs(valueX * invL1Norm)) * Mth.sign(valueY);
+		} else {
+			resX = valueX * invL1Norm;
+			resY = valueY * invL1Norm;
+		}
+
+		// map y to always be positive
+		resY = resY * 0.5f + 0.5f;
+
+		// add a bias so that y is never 0 (sign in the vertex shader)
+		if (resY < bias)
+			resY = bias;
+
+		// Apply the sign of the binormal to y, which was computed elsewhere
+		if (valueW < 0)
+			resY *= -1;
+
+		tangentX = floatToSnorm8(resX);
+		tangentY = floatToSnorm8(resY);
+	}
 
 	/**
 	 * @author IMS
@@ -51,7 +121,7 @@ public class MixinEntityRenderDispatcher {
 		int tangent = 0;
 
 		if (extended) {
-			tangent = getTangent(normal, minX, minY, minZ, u1, v1,
+			normal = getTangent(normal, minX, minY, minZ, u1, v1,
 				minX, minY, maxZ, u1, v2,
 				maxX, minY, maxZ, u2, v2
 			);
@@ -66,16 +136,16 @@ public class MixinEntityRenderDispatcher {
 			long ptr = buffer;
 
 			if (extended) {
-				writeShadowVertexIris(ptr, matPosition, minX, minY, minZ, u1, v1, color, midU, midV, normal, tangent);
+				writeShadowVertexIris(ptr, matPosition, minX, minY, minZ, u1, v1, color, midU, midV, normal);
 				ptr += stride;
 
-				writeShadowVertexIris(ptr, matPosition, minX, minY, maxZ, u1, v2, color, midU, midV, normal, tangent);
+				writeShadowVertexIris(ptr, matPosition, minX, minY, maxZ, u1, v2, color, midU, midV, normal);
 				ptr += stride;
 
-				writeShadowVertexIris(ptr, matPosition, maxX, minY, maxZ, u2, v2, color, midU, midV, normal, tangent);
+				writeShadowVertexIris(ptr, matPosition, maxX, minY, maxZ, u2, v2, color, midU, midV, normal);
 				ptr += stride;
 
-				writeShadowVertexIris(ptr, matPosition, maxX, minY, minZ, u2, v1, color, midU, midV, normal, tangent);
+				writeShadowVertexIris(ptr, matPosition, maxX, minY, minZ, u2, v1, color, midU, midV, normal);
 				ptr += stride;
 			} else {
 				writeShadowVertex(ptr, matPosition, minX, minY, minZ, u1, v1, color, normal);
@@ -96,13 +166,13 @@ public class MixinEntityRenderDispatcher {
 		}
 	}
 
-	private static void writeShadowVertexIris(long ptr, Matrix4f matPosition, float x, float y, float z, float u, float v, int color, float midU, float midV, int normal, int tangent) {
+	private static void writeShadowVertexIris(long ptr, Matrix4f matPosition, float x, float y, float z, float u, float v, int color, float midU, float midV, int normal) {
 		// The transformed position vector
 		float xt = MatrixHelper.transformPositionX(matPosition, x, y, z);
 		float yt = MatrixHelper.transformPositionY(matPosition, x, y, z);
 		float zt = MatrixHelper.transformPositionZ(matPosition, x, y, z);
 
-		EntityVertex.write(ptr, xt, yt, zt, color, u, v, midU, midV, OverlayTexture.NO_OVERLAY, LightTexture.FULL_BRIGHT, normal, tangent);
+		EntityVertex.write(ptr, xt, yt, zt, color, u, v, midU, midV, OverlayTexture.NO_OVERLAY, LightTexture.FULL_BRIGHT, (byte) 0, (byte) 0, (byte) 0, (byte) 0);
 	}
 
 	private static void writeShadowVertex(long ptr, Matrix4f matPosition, float x, float y, float z, float u, float v, int color, int normal) {
@@ -186,7 +256,9 @@ public class MixinEntityRenderDispatcher {
 			tangentW = 1.0F;
 		}
 
-		return NormalHelper.packNormal(tangentx, tangenty, tangentz, tangentW);
+		vec_to_oct(normal);
+		vec_to_tangent(tangentx, tangenty, tangentz, tangentW);
+		return NormalHelper.packNormal(normalConvX, normalConvY, tangentX, tangentY);
 	}
 
 	private static float rsqrt(float value) {
