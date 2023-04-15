@@ -13,8 +13,6 @@ import java.util.stream.Stream;
  * Static class that deals with printing the patched_shader folder.
  */
 public class PatchedShaderPrinter {
-	public static final boolean prettyPrintShaders = FabricLoader.getInstance().isDevelopmentEnvironment()
-		|| System.getProperty("iris.prettyPrintShaders", "false").equals("true");
 	private static boolean outputLocationCleared = false;
 	private static int programCounter = 0;
 
@@ -24,7 +22,7 @@ public class PatchedShaderPrinter {
 	}
 
 	public static void debugPatchedShaders(String name, String vertex, String geometry, String fragment, String json) {
-		if (prettyPrintShaders) {
+		if (Iris.getIrisConfig().areDebugOptionsEnabled()) {
 			final Path debugOutDir = FabricLoader.getInstance().getGameDir().resolve("patched_shaders");
 			if (!outputLocationCleared) {
 				try {
