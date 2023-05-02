@@ -4,12 +4,9 @@ import com.google.common.collect.ImmutableList;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.coderbot.iris.gui.GuiUtil;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.ComponentPath;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.components.events.ContainerEventHandler;
 import net.minecraft.client.gui.components.events.GuiEventListener;
-import net.minecraft.client.gui.navigation.FocusNavigationEvent;
-import net.minecraft.client.gui.navigation.ScreenRectangle;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import org.jetbrains.annotations.NotNull;
@@ -125,20 +122,12 @@ public class IrisElementRow {
 		return Optional.empty();
 	}
 
-	private Optional<Element> getFocused() {
-		return this.orderedElements.stream().filter(Element::isFocused).findFirst();
-	}
-
 	public boolean mouseClicked(double mx, double my, int button) {
 		return getHovered(mx, my).map(element -> element.mouseClicked(mx, my, button)).orElse(false);
 	}
 
 	public boolean mouseReleased(double mx, double my, int button) {
 		return getHovered(mx, my).map(element -> element.mouseReleased(mx, my, button)).orElse(false);
-	}
-
-	public boolean keyPressed(int keycode, int scancode, int modifiers) {
-		return getFocused().map(element -> element.keyPressed(keycode, scancode, modifiers)).orElse(false);
 	}
 
 	public List<? extends GuiEventListener> children() {
@@ -149,13 +138,11 @@ public class IrisElementRow {
 		public boolean disabled = false;
 		private boolean hovered = false;
 		private boolean focused;
-		private ScreenRectangle bounds = ScreenRectangle.empty();
 
 		public void render(PoseStack poseStack, int x, int y, int width, int height, int mouseX, int mouseY, float tickDelta, boolean hovered) {
-			this.bounds = new ScreenRectangle(x, y, width, height);
 
 			GuiUtil.bindIrisWidgetsTexture();
-			GuiUtil.drawButton(poseStack, x, y, width, height, isHovered() || isFocused(), this.disabled);
+			GuiUtil.drawButton(poseStack, x, y, width, height, isHovered(), this.disabled);
 
 			this.hovered = hovered;
 			this.renderLabel(poseStack, x, y, width, height, mouseX, mouseY, tickDelta, hovered);
@@ -165,27 +152,6 @@ public class IrisElementRow {
 
 		public boolean isHovered() {
 			return hovered;
-		}
-
-		@Override
-		public boolean isFocused() {
-			return focused;
-		}
-
-		@Override
-		public void setFocused(boolean focused) {
-			this.focused = focused;
-		}
-
-		@Nullable
-		@Override
-		public ComponentPath nextFocusPath(FocusNavigationEvent pGuiEventListener0) {
-			return (!isFocused()) ? ComponentPath.leaf(this) : null;
-		}
-
-		@Override
-		public @NotNull ScreenRectangle getRectangle() {
-			return bounds;
 		}
 	}
 
@@ -241,7 +207,7 @@ public class IrisElementRow {
 			int iconY = y + (int)((height - this.icon.getHeight()) * 0.5);
 
 			GuiUtil.bindIrisWidgetsTexture();
-			if (!this.disabled && (hovered || isFocused())) {
+			if (!this.disabled && (hovered)) {
 				this.hoveredIcon.draw(poseStack, iconX, iconY);
 			} else {
 				this.icon.draw(poseStack, iconX, iconY);

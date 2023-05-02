@@ -13,7 +13,6 @@ import net.coderbot.iris.texture.pbr.loader.PBRTextureLoader.PBRTextureConsumer;
 import net.coderbot.iris.texture.pbr.loader.PBRTextureLoaderRegistry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.AbstractTexture;
-import net.minecraft.client.renderer.texture.Dumpable;
 import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.NotNull;
 
@@ -124,12 +123,7 @@ public class PBRTextureManager {
 		}
 	}
 
-	private static void dumpTexture(Dumpable dumpable, ResourceLocation id, Path path) {
-		try {
-			dumpable.dumpContents(id, path);
-		} catch (IOException e) {
-			Iris.logger.error("Failed to dump texture {}", id, e);
-		}
+	private static void dumpTexture(PBRDumpable dumpable, ResourceLocation id, Path path) {
 	}
 
 	public void clear() {

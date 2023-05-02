@@ -43,7 +43,7 @@ public class BiomeParameters {
 					}
 				}))
 				.uniform1i(PER_TICK, "biome_precipitation", playerI(player -> {
-					Biome.Precipitation precipitation = player.level.getBiome(player.blockPosition()).value().getPrecipitationAt(player.blockPosition());
+					Biome.Precipitation precipitation = player.level.getBiome(player.blockPosition()).value().getPrecipitation();
 					switch (precipitation){
 						case NONE: return 0;
 						case RAIN: return 1;

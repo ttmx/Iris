@@ -7,8 +7,6 @@ import net.coderbot.iris.gui.NavigationController;
 import net.coderbot.iris.gui.screen.ShaderPackScreen;
 import net.coderbot.iris.shaderpack.option.StringOption;
 import net.coderbot.iris.shaderpack.option.menu.OptionMenuStringOptionElement;
-import net.minecraft.client.gui.navigation.ScreenDirection;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextColor;
 
@@ -48,15 +46,11 @@ public class StringElementWidget extends BaseOptionElementWidget<OptionMenuStrin
 	}
 
 	@Override
-	public void render(PoseStack poseStack, int mouseX, int mouseY, float tickDelta, boolean hovered) {
-		this.updateRenderParams(0);
+	public void render(PoseStack poseStack, int x, int y, int width, int height, int mouseX, int mouseY, float tickDelta, boolean hovered) {
+		this.updateRenderParams(width, 0);
 
-		this.renderOptionWithValue(poseStack, hovered || isFocused());
-		if (usedKeyboard) {
-			tryRenderTooltip(poseStack, bounds.getBoundInDirection(ScreenDirection.RIGHT), bounds.position().y(), hovered);
-		} else {
-			tryRenderTooltip(poseStack, mouseX, mouseY, hovered);
-		}
+		this.renderOptionWithValue(poseStack, x, y, width, height, hovered);
+		this.tryRenderTooltip(poseStack, mouseX, mouseY, hovered);
 	}
 
 	private void increment(int amount) {

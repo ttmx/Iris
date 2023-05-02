@@ -9,7 +9,6 @@ import net.coderbot.iris.gui.GuiUtil;
 import net.coderbot.iris.gui.screen.ShaderPackScreen;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.ComponentPath;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiComponent;
 import net.minecraft.client.gui.components.AbstractSelectionList;
@@ -17,8 +16,6 @@ import net.minecraft.client.gui.components.ContainerObjectSelectionList;
 import net.minecraft.client.gui.components.ObjectSelectionList;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.narration.NarratableEntry;
-import net.minecraft.client.gui.navigation.FocusNavigationEvent;
-import net.minecraft.client.gui.navigation.ScreenRectangle;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.TextColor;
@@ -70,15 +67,6 @@ public class ShaderPackSelectionList extends IrisObjectSelectionList<ShaderPackS
 		this.key = key1;
 		this.watcher = watcher1;
 		refresh();
-	}
-
-	@Override
-	public boolean keyPressed(int pContainerEventHandler0, int pInt1, int pInt2) {
-		if (pContainerEventHandler0 == GLFW.GLFW_KEY_UP) {
-			if (getFocused() == getFirstElement()) return true;
-		}
-
-		return super.keyPressed(pContainerEventHandler0, pInt1, pInt2);
 	}
 
 	@Override
@@ -214,16 +202,10 @@ public class ShaderPackSelectionList extends IrisObjectSelectionList<ShaderPackS
 		private final String packName;
 		private final ShaderPackSelectionList list;
 		private final int index;
-		private ScreenRectangle bounds;
 		private boolean focused;
 
-		@Override
-		public ScreenRectangle getRectangle() {
-			return bounds;
-		}
 
 		public ShaderPackEntry(int index, ShaderPackSelectionList list, String packName) {
-			this.bounds = ScreenRectangle.empty();
 			this.packName = packName;
 			this.list = list;
 			this.index = index;
@@ -244,7 +226,6 @@ public class ShaderPackSelectionList extends IrisObjectSelectionList<ShaderPackS
 
 		@Override
 		public void render(PoseStack poseStack, int index, int y, int x, int entryWidth, int entryHeight, int mouseX, int mouseY, boolean hovered, float tickDelta) {
-			this.bounds = new ScreenRectangle(x, y, entryWidth, entryHeight);
 			Font font = Minecraft.getInstance().font;
 			int color = 0xFFFFFF;
 			String name = packName;
@@ -318,12 +299,6 @@ public class ShaderPackSelectionList extends IrisObjectSelectionList<ShaderPackS
 			ShaderPackSelectionList.this.screen.setFocused(ShaderPackSelectionList.this.screen.getBottomRowOption());
 
 			return didAnything;
-		}
-
-		@Nullable
-		@Override
-		public ComponentPath nextFocusPath(FocusNavigationEvent pGuiEventListener0) {
-			return (!isFocused()) ? ComponentPath.leaf(this) : null;
 		}
 
 
@@ -400,14 +375,6 @@ public class ShaderPackSelectionList extends IrisObjectSelectionList<ShaderPackS
 
 			return false;
 		}
-
-		@Nullable
-		@Override
-		public ComponentPath nextFocusPath(FocusNavigationEvent pGuiEventListener0) {
-			return (!isFocused()) ? ComponentPath.leaf(this) : null;
-		}
-
-
 
 		public boolean isFocused() {
 			return this.list.getFocused() == this;

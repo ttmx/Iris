@@ -20,12 +20,6 @@ public class MixinTextureManager {
 		TextureFormatLoader.reload(resourceManager);
 		PBRTextureManager.INSTANCE.clear();
 	}
-
-	@Inject(method = "_dumpAllSheets(Ljava/nio/file/Path;)V", at = @At("RETURN"))
-	private void iris$onInnerDumpTextures(Path path, CallbackInfo ci) {
-		PBRTextureManager.INSTANCE.dumpTextures(path);
-	}
-
 	@Inject(method = "close()V", at = @At("TAIL"), remap = false)
 	private void iris$onTailClose(CallbackInfo ci) {
 		PBRTextureManager.INSTANCE.close();

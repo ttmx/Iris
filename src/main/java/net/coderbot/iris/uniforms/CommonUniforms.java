@@ -68,9 +68,9 @@ public final class CommonUniforms {
 			int glId = RenderSystem.getShaderTexture(0);
 
 			AbstractTexture texture = TextureTracker.INSTANCE.getTexture(glId);
-			if (texture instanceof TextureAtlas atlas) {
-				TextureAtlasAccessor atlasAccessor = (TextureAtlasAccessor) atlas;
-				return new Vector2i(atlasAccessor.callGetWidth(), atlasAccessor.callGetHeight());
+			if (texture instanceof TextureAtlas) {
+				TextureInfo info = TextureInfoCache.INSTANCE.getInfo(glId);
+				return new Vector2i(info.getWidth(), info.getHeight());
 			}
 
 			return ZERO_VECTOR_2i;
@@ -258,7 +258,7 @@ public final class CommonUniforms {
 
 		Vec3 feet = client.cameraEntity.position();
 		Vec3 eyes = new Vec3(feet.x, client.cameraEntity.getEyeY(), feet.z);
-		BlockPos eyeBlockPos = BlockPos.containing(eyes);
+		BlockPos eyeBlockPos = new BlockPos(eyes);
 
 		int blockLight = client.level.getBrightness(LightLayer.BLOCK, eyeBlockPos);
 		int skyLight = client.level.getBrightness(LightLayer.SKY, eyeBlockPos);

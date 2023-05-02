@@ -47,10 +47,10 @@ public class BooleanElementWidget extends BaseOptionElementWidget<OptionMenuBool
 	}
 
 	@Override
-	public void render(PoseStack poseStack, int mouseX, int mouseY, float tickDelta, boolean hovered) {
-		this.updateRenderParams(28);
+	public void render(PoseStack poseStack, int x, int y, int width, int height, int mouseX, int mouseY, float tickDelta, boolean hovered) {
+		this.updateRenderParams(width, 28);
 
-		this.renderOptionWithValue(poseStack, hovered || isFocused());
+		this.renderOptionWithValue(poseStack, x, y, width, height, hovered);
 		this.tryRenderTooltip(poseStack, mouseX, mouseY, hovered);
 	}
 

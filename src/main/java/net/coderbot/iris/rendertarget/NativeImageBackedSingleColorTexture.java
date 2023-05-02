@@ -6,7 +6,7 @@ import net.minecraft.util.FastColor;
 
 public class NativeImageBackedSingleColorTexture extends DynamicTexture {
 	public NativeImageBackedSingleColorTexture(int red, int green, int blue, int alpha) {
-		super(create(FastColor.ABGR32.color(alpha, blue, green, red)));
+		super(create(NativeImage.combine(alpha, blue, green, red)));
 	}
 
 	public NativeImageBackedSingleColorTexture(int rgba) {

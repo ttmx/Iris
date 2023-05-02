@@ -191,13 +191,6 @@ public class PBRAtlasTexture extends AbstractTexture implements PBRDumpable {
 	public void load(ResourceManager manager) {
 	}
 
-	@Override
-	public void dumpContents(ResourceLocation id, Path path) throws IOException {
-		String fileName = id.toDebugFileName();
-		TextureUtil.writeAsPNG(path, fileName, getId(), mipLevel, width, height);
-		dumpSpriteNames(path, fileName, texturesByName);
-	}
-
 	protected static void dumpSpriteNames(Path dir, String fileName, Map<ResourceLocation, PBRTextureAtlasSprite> sprites) {
 		Path path = dir.resolve(fileName + ".txt");
 		try (BufferedWriter writer = Files.newBufferedWriter(path)) {

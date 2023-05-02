@@ -3,7 +3,9 @@ package net.coderbot.iris.texture.pbr.loader;
 import com.mojang.blaze3d.platform.NativeImage;
 import net.coderbot.iris.Iris;
 import net.coderbot.iris.mixin.texture.AnimationMetadataSectionAccessor;
+import net.coderbot.iris.mixin.texture.SpriteContentsAccessor;
 import net.coderbot.iris.mixin.texture.TextureAtlasAccessor;
+import net.coderbot.iris.texture.TextureInfoCache;
 import net.coderbot.iris.texture.format.TextureFormat;
 import net.coderbot.iris.texture.format.TextureFormatLoader;
 import net.coderbot.iris.texture.mipmap.ChannelMipmapGenerator;
@@ -14,6 +16,7 @@ import net.coderbot.iris.texture.pbr.PBRSpriteHolder;
 import net.coderbot.iris.texture.pbr.PBRType;
 import net.coderbot.iris.texture.pbr.SpriteContentsExtension;
 import net.coderbot.iris.texture.util.ImageManipulationUtil;
+import net.minecraft.client.renderer.texture.MissingTextureAtlasSprite;
 import net.minecraft.client.renderer.texture.SpriteContents;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
@@ -39,10 +42,10 @@ public class AtlasPBRLoader implements PBRTextureLoader<TextureAtlas> {
 
 	@Override
 	public void load(TextureAtlas atlas, ResourceManager resourceManager, PBRTextureConsumer pbrTextureConsumer) {
-		TextureAtlasAccessor atlasAccessor = (TextureAtlasAccessor) atlas;
-		int atlasWidth = atlasAccessor.callGetWidth();
-		int atlasHeight = atlasAccessor.callGetHeight();
-		int mipLevel = atlasAccessor.getMipLevel();
+		TextureInfoCache.TextureInfo textureInfo = TextureInfoCache.INSTANCE.getInfo(atlas.getId());
+		int atlasWidth = textureInfo.getWidth();
+		int atlasHeight = textureInfo.getHeight();
+		int mipLevel = fetchAtlasMipLevel(atlas);
 
 		PBRAtlasTexture normalAtlas = null;
 		PBRAtlasTexture specularAtlas = null;
@@ -79,6 +82,11 @@ public class AtlasPBRLoader implements PBRTextureLoader<TextureAtlas> {
 		}
 	}
 
+	protected static int fetchAtlasMipLevel(TextureAtlas atlas) {
+		TextureAtlasSprite missingSprite = atlas.getSprite(MissingTextureAtlasSprite.getLocation());
+		return ((SpriteContentsAccessor) missingSprite.contents()).getByMipLevel().length - 1;
+	}
+
 	@Nullable
 	protected PBRTextureAtlasSprite createPBRSprite(TextureAtlasSprite sprite, ResourceManager resourceManager, TextureAtlas atlas, int atlasWidth, int atlasHeight, int mipLevel, PBRType pbrType) {
 		ResourceLocation spriteName = sprite.contents().name();
@@ -111,7 +119,7 @@ public class AtlasPBRLoader implements PBRTextureLoader<TextureAtlas> {
 		FrameSize frameSize = animationMetadata.calculateFrameSize(imageWidth, imageHeight);
 		int frameWidth = frameSize.width();
 		int frameHeight = frameSize.height();
-		if (!Mth.isMultipleOf(imageWidth, frameWidth) || !Mth.isMultipleOf(imageHeight, frameHeight)) {
+		if (!isMultipleOf(imageWidth, frameWidth) || !isMultipleOf(imageHeight, frameHeight)) {
 			Iris.logger.error("Image {} size {},{} is not multiple of frame size {},{}", pbrImageLocation, imageWidth, imageHeight, frameWidth, frameHeight);
 			nativeImage.close();
 			return null;
@@ -154,6 +162,10 @@ public class AtlasPBRLoader implements PBRTextureLoader<TextureAtlas> {
 		PBRSpriteContents pbrSpriteContents = new PBRSpriteContents(pbrSpriteName, new FrameSize(frameWidth, frameHeight), nativeImage, animationMetadata, pbrType);
 		pbrSpriteContents.increaseMipLevel(mipLevel);
 		return new PBRTextureAtlasSprite(pbrSpriteName, pbrSpriteContents, atlasWidth, atlasHeight, sprite.getX(), sprite.getY(), sprite);
+	}
+
+	private static boolean isMultipleOf(int a, int b) {
+		return a % b == 0;
 	}
 
 	protected ResourceLocation getPBRImageLocation(ResourceLocation spriteName, PBRType pbrType) {

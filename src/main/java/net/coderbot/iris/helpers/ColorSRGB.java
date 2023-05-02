@@ -84,7 +84,7 @@ public class ColorSRGB {
 	 * @param a The alpha-component in linear RGB space (0 to 255)
 	 */
 	public static int linearToSrgb(float r, float g, float b, int a) {
-		return FastColor.ABGR32.color(a, linearToSrgb(b), linearToSrgb(g), linearToSrgb(r));
+		return NativeImage.combine(a, linearToSrgb(b), linearToSrgb(g), linearToSrgb(r));
 	}
 
 	/**

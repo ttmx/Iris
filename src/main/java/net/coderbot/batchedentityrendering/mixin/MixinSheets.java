@@ -13,14 +13,4 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(Sheets.class)
 public class MixinSheets {
-	@Shadow
-	@Final
-	private static RenderType ARMOR_TRIMS_SHEET_TYPE;
-
-	@Inject(method = "<clinit>", at = @At("TAIL"))
-	private static void setSheet(CallbackInfo ci) {
-		((BlendingStateHolder) ARMOR_TRIMS_SHEET_TYPE).setTransparencyType(TransparencyType.GENERAL_TRANSPARENT);
-		((BlendingStateHolder) RenderType.textBackground()).setTransparencyType(TransparencyType.OPAQUE);
-		((BlendingStateHolder) RenderType.textBackgroundSeeThrough()).setTransparencyType(TransparencyType.OPAQUE);
-	}
 }
