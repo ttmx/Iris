@@ -1,6 +1,7 @@
 package net.coderbot.iris.compat.sodium.impl.vertex_format.terrain_xhfp;
 
-import me.jellysquid.mods.sodium.client.render.vertex.type.ChunkVertexEncoder;
+import me.jellysquid.mods.sodium.client.render.chunk.terrain.material.Material;
+import me.jellysquid.mods.sodium.client.render.chunk.vertex.format.ChunkVertexEncoder;
 import net.coderbot.iris.compat.sodium.impl.block_context.BlockContextHolder;
 import net.coderbot.iris.compat.sodium.impl.block_context.ContextAwareVertexWriter;
 import org.joml.Vector3f;
@@ -59,7 +60,7 @@ public class XHFPTerrainVertex implements ChunkVertexEncoder, ContextAwareVertex
 
 	@Override
 	public long write(long ptr,
-					  Vertex vertex, int chunkId) {
+					  Material material, ChunkVertexEncoder.Vertex vertex, int chunkId) {
 		uSum += vertex.u;
 		vSum += vertex.v;
 		vertexCount++;
@@ -67,7 +68,9 @@ public class XHFPTerrainVertex implements ChunkVertexEncoder, ContextAwareVertex
 		MemoryUtil.memPutShort(ptr + 0, XHFPModelVertexType.encodePosition(vertex.x));
 		MemoryUtil.memPutShort(ptr + 2, XHFPModelVertexType.encodePosition(vertex.y));
 		MemoryUtil.memPutShort(ptr + 4, XHFPModelVertexType.encodePosition(vertex.z));
-		MemoryUtil.memPutShort(ptr + 6, (short) chunkId);
+
+		MemoryUtil.memPutByte(ptr + 6, material.bits());
+		MemoryUtil.memPutByte(ptr + 7, (byte) chunkId);
 
 		MemoryUtil.memPutInt(ptr + 8, vertex.color);
 
@@ -76,9 +79,9 @@ public class XHFPTerrainVertex implements ChunkVertexEncoder, ContextAwareVertex
 
 		MemoryUtil.memPutInt(ptr + 16, vertex.light);
 
-		MemoryUtil.memPutShort(ptr + 36, contextHolder.blockId);
-		MemoryUtil.memPutShort(ptr + 38, contextHolder.renderType);
-		MemoryUtil.memPutInt(ptr + 40, ExtendedDataHelper.computeMidBlock(vertex.x, vertex.y, vertex.z, contextHolder.localPosX, contextHolder.localPosY, contextHolder.localPosZ));
+		MemoryUtil.memPutShort(ptr + 32, contextHolder.blockId);
+		MemoryUtil.memPutShort(ptr + 34, contextHolder.renderType);
+		MemoryUtil.memPutInt(ptr + 36, contextHolder.ignoreMidBlock ? 0 : ExtendedDataHelper.computeMidBlock(vertex.x, vertex.y, vertex.z, contextHolder.localPosX, contextHolder.localPosY, contextHolder.localPosZ));
 
 		if (vertexCount == 4) {
 			vertexCount = 0;
@@ -113,15 +116,18 @@ public class XHFPTerrainVertex implements ChunkVertexEncoder, ContextAwareVertex
 			uSum *= 0.25f;
 			vSum *= 0.25f;
 
-			MemoryUtil.memPutFloat(ptr + 20, uSum);
-			MemoryUtil.memPutFloat(ptr + 20 - STRIDE, uSum);
-			MemoryUtil.memPutFloat(ptr + 20 - STRIDE * 2, uSum);
-			MemoryUtil.memPutFloat(ptr + 20 - STRIDE * 3, uSum);
+			short midU = XHFPModelVertexType.encodeBlockTexture(uSum);
+			short midV = XHFPModelVertexType.encodeBlockTexture(vSum);
 
-			MemoryUtil.memPutFloat(ptr + 24, vSum);
-			MemoryUtil.memPutFloat(ptr + 24 - STRIDE, vSum);
-			MemoryUtil.memPutFloat(ptr + 24 - STRIDE * 2, vSum);
-			MemoryUtil.memPutFloat(ptr + 24 - STRIDE * 3, vSum);
+			MemoryUtil.memPutShort(ptr + 20, midU);
+			MemoryUtil.memPutShort(ptr + 20 - STRIDE, midU);
+			MemoryUtil.memPutShort(ptr + 20 - STRIDE * 2, midU);
+			MemoryUtil.memPutShort(ptr + 20 - STRIDE * 3, midU);
+
+			MemoryUtil.memPutShort(ptr + 22, midV);
+			MemoryUtil.memPutShort(ptr + 22 - STRIDE, midV);
+			MemoryUtil.memPutShort(ptr + 22 - STRIDE * 2, midV);
+			MemoryUtil.memPutShort(ptr + 22 - STRIDE * 3, midV);
 
 			uSum = 0;
 			vSum = 0;
@@ -141,17 +147,17 @@ public class XHFPTerrainVertex implements ChunkVertexEncoder, ContextAwareVertex
 
 
 
-			MemoryUtil.memPutInt(ptr + 32, packedNormal);
-			MemoryUtil.memPutInt(ptr + 32 - STRIDE, packedNormal);
-			MemoryUtil.memPutInt(ptr + 32 - STRIDE * 2, packedNormal);
-			MemoryUtil.memPutInt(ptr + 32 - STRIDE * 3, packedNormal);
+			MemoryUtil.memPutInt(ptr + 28, packedNormal);
+			MemoryUtil.memPutInt(ptr + 28 - STRIDE, packedNormal);
+			MemoryUtil.memPutInt(ptr + 28 - STRIDE * 2, packedNormal);
+			MemoryUtil.memPutInt(ptr + 28 - STRIDE * 3, packedNormal);
 
 			int tangent = NormalHelper.computeTangent(normal.x, normal.y, normal.z, quad);
 
-			MemoryUtil.memPutInt(ptr + 28, tangent);
-			MemoryUtil.memPutInt(ptr + 28 - STRIDE, tangent);
-			MemoryUtil.memPutInt(ptr + 28 - STRIDE * 2, tangent);
-			MemoryUtil.memPutInt(ptr + 28 - STRIDE * 3, tangent);
+			MemoryUtil.memPutInt(ptr + 24, tangent);
+			MemoryUtil.memPutInt(ptr + 24 - STRIDE, tangent);
+			MemoryUtil.memPutInt(ptr + 24 - STRIDE * 2, tangent);
+			MemoryUtil.memPutInt(ptr + 24 - STRIDE * 3, tangent);
 		}
 
 		return ptr + STRIDE;

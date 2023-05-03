@@ -8,7 +8,7 @@ import net.coderbot.iris.gl.blending.AlphaTest;
 import net.coderbot.iris.gl.blending.BlendModeOverride;
 import net.coderbot.iris.gl.blending.BufferBlendOverride;
 import net.coderbot.iris.gl.framebuffer.GlFramebuffer;
-import net.coderbot.iris.pipeline.PatchedShaderPrinter;
+import net.coderbot.iris.pipeline.ShaderPrinter;
 import net.coderbot.iris.pipeline.WorldRenderingPipeline;
 import net.coderbot.iris.pipeline.newshader.fallback.FallbackShader;
 import net.coderbot.iris.pipeline.newshader.fallback.ShaderSynthesizer;
@@ -94,7 +94,7 @@ public class NewShaderTests {
 
 		String shaderJsonString = shaderJson.toString();
 
-		PatchedShaderPrinter.debugPatchedShaders(name, vertex, geometry, fragment, shaderJsonString);
+		ShaderPrinter.printProgram(name).addSources(transformed).addJson(shaderJsonString).print();
 
 		ResourceProvider shaderResourceFactory = new IrisProgramResourceFactory(shaderJsonString, vertex, geometry, fragment);
 
@@ -122,8 +122,8 @@ public class NewShaderTests {
 												GlFramebuffer writingToAfterTranslucent, AlphaTest alpha,
 												VertexFormat vertexFormat, BlendModeOverride blendModeOverride,
 												NewWorldRenderingPipeline parent, FogMode fogMode, boolean entityLighting,
-												boolean isGlint, boolean intensityTex, boolean isFullbright) throws IOException {
-		ShaderAttributeInputs inputs = new ShaderAttributeInputs(vertexFormat, isFullbright, false, isGlint);
+												boolean isGlint, boolean isText, boolean intensityTex, boolean isFullbright) throws IOException {
+		ShaderAttributeInputs inputs = new ShaderAttributeInputs(vertexFormat, isFullbright, false, isGlint, isText);
 
 		// TODO: Is this check sound in newer versions?
 		boolean isLeash = vertexFormat == DefaultVertexFormat.POSITION_COLOR_LIGHTMAP;
@@ -167,7 +167,11 @@ public class NewShaderTests {
 			"    ]\n" +
 			"}";
 
-		PatchedShaderPrinter.debugPatchedShaders(name, vertex, null, fragment, shaderJsonString);
+		ShaderPrinter.printProgram(name)
+			.addSource(PatchShaderType.VERTEX, vertex)
+			.addSource(PatchShaderType.FRAGMENT, fragment)
+			.addJson(shaderJsonString)
+			.print();
 
 		ResourceProvider shaderResourceFactory = new IrisProgramResourceFactory(shaderJsonString, vertex, null, fragment);
 
