@@ -516,6 +516,12 @@ public class ProgramSet implements ProgramSetInterface {
 		AbsolutePackPath geometryPath = directory.resolve(program + ".gsh");
 		String geometrySource = sourceProvider.apply(geometryPath);
 
+		AbsolutePackPath tcsPath = directory.resolve(program + ".tcs");
+		String tcsSource = sourceProvider.apply(tcsPath);
+
+		AbsolutePackPath tesPath = directory.resolve(program + ".tes");
+		String tesSource = sourceProvider.apply(tesPath);
+
 		AbsolutePackPath fragmentPath = directory.resolve(program + ".fsh");
 		String fragmentSource = sourceProvider.apply(fragmentPath);
 
@@ -538,7 +544,7 @@ public class ProgramSet implements ProgramSetInterface {
 				""";
 		}
 
-		return new ProgramSource(program, vertexSource, geometrySource, fragmentSource, programSet, properties,
+		return new ProgramSource(program, vertexSource, geometrySource,  tcsSource, tesSource, fragmentSource, programSet, properties,
 				defaultBlendModeOverride);
 	}
 

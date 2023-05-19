@@ -35,6 +35,7 @@ import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.world.level.dimension.DimensionType;
 import org.jetbrains.annotations.NotNull;
 import org.lwjgl.glfw.GLFW;
+import org.lwjgl.opengl.GL43C;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -197,6 +198,8 @@ public class Iris {
 					" Trying to avoid a crash but this is an odd state.");
 			return;
 		}
+
+		GL43C.glPatchParameteri(GL43C.GL_PATCH_VERTICES, 4);
 
 		PBRTextureManager.INSTANCE.init();
 
