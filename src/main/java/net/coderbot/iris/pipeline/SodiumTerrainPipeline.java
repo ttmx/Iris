@@ -39,6 +39,8 @@ import net.coderbot.iris.uniforms.custom.CustomUniforms;
 public class SodiumTerrainPipeline {
 	Optional<String> terrainSolidVertex;
 	Optional<String> terrainSolidGeometry;
+	Optional<String> terrainTCSSource;
+	Optional<String> terrainTESSource;
 	Optional<String> terrainSolidFragment;
 	GlFramebuffer terrainSolidFramebuffer;
 	BlendModeOverride terrainSolidBlendOverride;
@@ -46,6 +48,9 @@ public class SodiumTerrainPipeline {
 
 	Optional<String> terrainCutoutVertex;
 	Optional<String> terrainCutoutGeometry;
+
+	Optional<String> translucentTCSSource;
+	Optional<String> translucentTESSource;
 	Optional<String> terrainCutoutFragment;
 	GlFramebuffer terrainCutoutFramebuffer;
 	BlendModeOverride terrainCutoutBlendOverride;
@@ -54,6 +59,7 @@ public class SodiumTerrainPipeline {
 
 	Optional<String> translucentVertex;
 	Optional<String> translucentGeometry;
+
 	Optional<String> translucentFragment;
 	GlFramebuffer translucentFramebuffer;
 	BlendModeOverride translucentBlendOverride;
@@ -63,6 +69,8 @@ public class SodiumTerrainPipeline {
 	Optional<String> shadowVertex;
 	Optional<String> shadowGeometry;
 	Optional<String> shadowFragment;
+	Optional<String> shadowTCSSource;
+	Optional<String> shadowTESSource;
 	Optional<String> shadowCutoutFragment;
 	GlFramebuffer shadowFramebuffer;
 	BlendModeOverride shadowBlendOverride = BlendModeOverride.OFF;
@@ -152,6 +160,8 @@ public class SodiumTerrainPipeline {
 				vertexType.getPositionScale(), vertexType.getPositionOffset(), vertexType.getTextureScale(), parent.getTextureMap());
 			terrainSolidVertex = Optional.ofNullable(transformed.get(PatchShaderType.VERTEX));
 			terrainSolidGeometry = Optional.ofNullable(transformed.get(PatchShaderType.GEOMETRY));
+			terrainTESSource = sources.getTES();
+			terrainTCSSource = sources.getTCS();
 			terrainSolidFragment = Optional.ofNullable(transformed.get(PatchShaderType.FRAGMENT));
 
 			ShaderPrinter.printProgram(sources.getName() + "_sodium_solid").addSources(transformed).print();
@@ -160,6 +170,8 @@ public class SodiumTerrainPipeline {
 			terrainSolidBufferOverrides = Collections.emptyList();
 			terrainSolidVertex = Optional.empty();
 			terrainSolidGeometry = Optional.empty();
+			terrainTESSource = Optional.empty();
+			terrainTCSSource = Optional.empty();
 			terrainSolidFragment = Optional.empty();
 		});
 
@@ -215,7 +227,8 @@ public class SodiumTerrainPipeline {
 			translucentVertex = Optional.ofNullable(transformed.get(PatchShaderType.VERTEX));
 			translucentGeometry = Optional.ofNullable(transformed.get(PatchShaderType.GEOMETRY));
 			translucentFragment = Optional.ofNullable(transformed.get(PatchShaderType.FRAGMENT));
-
+			translucentTESSource = sources.getTES();
+			translucentTCSSource = sources.getTCS();
 			ShaderPrinter.printProgram(sources.getName() + "_sodium").addSources(transformed).print();
 		}, () -> {
 			translucentBlendOverride = null;
@@ -224,6 +237,8 @@ public class SodiumTerrainPipeline {
 			translucentVertex = Optional.empty();
 			translucentGeometry = Optional.empty();
 			translucentFragment = Optional.empty();
+			translucentTESSource = Optional.empty();
+			translucentTCSSource = Optional.empty();
 		});
 
 		programSet.getShadow().ifPresentOrElse(sources -> {
@@ -253,7 +268,8 @@ public class SodiumTerrainPipeline {
 			shadowGeometry = Optional.ofNullable(transformed.get(PatchShaderType.GEOMETRY));
 			shadowCutoutFragment = Optional.ofNullable(transformedCutout.get(PatchShaderType.FRAGMENT));
 			shadowFragment = Optional.ofNullable(transformed.get(PatchShaderType.FRAGMENT));
-
+			shadowTESSource = sources.getTES();
+			shadowTCSSource = sources.getTCS();
 			ShaderPrinter.printProgram(sources.getName() + "_sodium")
 				.addSources(transformed)
 				.setName(sources.getName() + "_sodium_cutout")
@@ -266,6 +282,8 @@ public class SodiumTerrainPipeline {
 			shadowVertex = Optional.empty();
 			shadowGeometry = Optional.empty();
 			shadowCutoutFragment = Optional.empty();
+			shadowTESSource = Optional.empty();
+			shadowTCSSource = Optional.empty();
 			shadowFragment = Optional.empty();
 		});
 	}
@@ -448,5 +466,29 @@ public class SodiumTerrainPipeline {
 
 		ResourceLocation identifier = new ResourceLocation(namespace, path);
 		return "";
+	}
+
+	public Optional<String> getShadowTCSSource() {
+		return shadowTCSSource;
+	}
+
+	public Optional<String> getTerrainTCSSource() {
+		return terrainTCSSource;
+	}
+
+	public Optional<String> getTranslucentTCSSource() {
+		return translucentTCSSource;
+	}
+
+	public Optional<String> getShadowTESSource() {
+		return shadowTESSource;
+	}
+
+	public Optional<String> getTerrainTESSource() {
+		return terrainTESSource;
+	}
+
+	public Optional<String> getTranslucentTESSource() {
+		return translucentTESSource;
 	}
 }
