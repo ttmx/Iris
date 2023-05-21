@@ -35,6 +35,10 @@ public class IrisImages {
 			final String name = "colorimg" + i;
 
 			images.addTextureImage(textureID, internalFormat, name);
+
+			if (images.hasImage(name)) {
+				renderTargets.get(index).createIfEmpty();
+			}
 		}
 	}
 
@@ -69,6 +73,10 @@ public class IrisImages {
 				textureID = () -> flipped.contains(index) ? shadowRenderTargets.getOrCreate(index).getAltTexture() : shadowRenderTargets.getOrCreate(index).getMainTexture();
 			}
 			InternalTextureFormat format = shadowRenderTargets.getColorTextureFormat(index);
+
+			if (images.hasImage("shadowcolorimg" + i)) {
+				shadowRenderTargets.get(index).createIfEmpty();
+			}
 
 			images.addTextureImage(textureID, format, "shadowcolorimg" + i);
 		}
