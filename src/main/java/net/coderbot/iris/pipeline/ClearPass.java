@@ -6,6 +6,7 @@ import net.coderbot.iris.vendored.joml.Vector4f;
 import net.minecraft.client.Minecraft;
 
 import java.util.Objects;
+import java.util.function.BooleanSupplier;
 import java.util.function.IntSupplier;
 
 public class ClearPass {
@@ -14,9 +15,11 @@ public class ClearPass {
 	private final IntSupplier viewportY;
 	private final GlFramebuffer framebuffer;
 	private final int clearFlags;
+	private final BooleanSupplier shouldClear;
 
-	public ClearPass(Vector4f color, IntSupplier viewportX, IntSupplier viewportY, GlFramebuffer framebuffer, int clearFlags) {
+	public ClearPass(Vector4f color, BooleanSupplier shouldClear, IntSupplier viewportX, IntSupplier viewportY, GlFramebuffer framebuffer, int clearFlags) {
 		this.color = color;
+		this.shouldClear = shouldClear;
 		this.viewportX = viewportX;
 		this.viewportY = viewportY;
 		this.framebuffer = framebuffer;
@@ -24,6 +27,8 @@ public class ClearPass {
 	}
 
 	public void execute(Vector4f defaultClearColor) {
+		if (!shouldClear.getAsBoolean()) return;
+
 		RenderSystem.viewport(0, 0, viewportX.getAsInt(), viewportY.getAsInt());
 		framebuffer.bind();
 

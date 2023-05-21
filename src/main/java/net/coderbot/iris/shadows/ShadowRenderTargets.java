@@ -3,7 +3,6 @@ package net.coderbot.iris.shadows;
 import com.google.common.collect.ImmutableSet;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
-import net.coderbot.iris.Iris;
 import net.coderbot.iris.features.FeatureFlags;
 import net.coderbot.iris.gl.IrisRenderSystem;
 import net.coderbot.iris.gl.framebuffer.GlFramebuffer;
@@ -17,9 +16,7 @@ import net.coderbot.iris.shaderpack.PackShadowDirectives;
 import org.lwjgl.opengl.GL30C;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 
 public class ShadowRenderTargets {
 	private final RenderTarget[] targets;
@@ -138,6 +135,8 @@ public class ShadowRenderTargets {
 		if (settings.getClear()) {
 			buffersToBeCleared.add(index);
 		}
+
+		targets[index].createIfEmpty();
 
 		if (settings.getClear()) {
 			buffersToBeCleared.add(index);

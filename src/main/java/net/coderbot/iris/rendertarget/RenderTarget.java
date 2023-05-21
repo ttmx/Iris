@@ -1,6 +1,7 @@
 package net.coderbot.iris.rendertarget;
 
 import com.mojang.blaze3d.platform.GlStateManager;
+import net.coderbot.iris.Iris;
 import net.coderbot.iris.gl.IrisRenderSystem;
 import net.coderbot.iris.gl.texture.InternalTextureFormat;
 import net.coderbot.iris.gl.texture.PixelFormat;
@@ -20,8 +21,9 @@ public class RenderTarget {
 	private int height;
 
 	private boolean isValid;
-	private final int mainTexture;
-	private final int altTexture;
+	private int mainTexture = 0;
+	private int altTexture = 0;
+	private boolean created = false;
 
 	private static final ByteBuffer NULL_BUFFER = null;
 
@@ -34,20 +36,6 @@ public class RenderTarget {
 
 		this.width = builder.width;
 		this.height = builder.height;
-
-		int[] textures = new int[2];
-		GlStateManager._genTextures(textures);
-
-		this.mainTexture = textures[0];
-		this.altTexture = textures[1];
-
-		boolean isPixelFormatInteger = builder.internalFormat.getPixelFormat().isInteger();
-		setupTexture(mainTexture, builder.width, builder.height, !isPixelFormatInteger);
-		setupTexture(altTexture, builder.width, builder.height, !isPixelFormatInteger);
-
-		// Clean up after ourselves
-		// This is strictly defensive to ensure that other buggy code doesn't tamper with our textures
-		GlStateManager._bindTexture(0);
 	}
 
 	private void setupTexture(int texture, int width, int height, boolean allowsLinear) {
@@ -74,9 +62,31 @@ public class RenderTarget {
 		this.width = width;
 		this.height = height;
 
+		if (!created) return;
+
 		resizeTexture(mainTexture, width, height);
 
 		resizeTexture(altTexture, width, height);
+	}
+
+	public void createIfEmpty() {
+		if (created) return;
+
+		created = true;
+
+		int[] textures = new int[2];
+		GlStateManager._genTextures(textures);
+
+		this.mainTexture = textures[0];
+		this.altTexture = textures[1];
+
+		boolean isPixelFormatInteger = internalFormat.getPixelFormat().isInteger();
+		setupTexture(mainTexture, width, height, !isPixelFormatInteger);
+		setupTexture(altTexture, width, height, !isPixelFormatInteger);
+
+		// Clean up after ourselves
+		// This is strictly defensive to ensure that other buggy code doesn't tamper with our textures
+		GlStateManager._bindTexture(0);
 	}
 
 	public InternalTextureFormat getInternalFormat() {
@@ -118,6 +128,10 @@ public class RenderTarget {
 
 	public static Builder builder() {
 		return new Builder();
+	}
+
+	public boolean isCreated() {
+		return created;
 	}
 
 	public static class Builder {

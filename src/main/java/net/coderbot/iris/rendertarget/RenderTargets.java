@@ -253,7 +253,6 @@ public class RenderTargets {
 
 		// NB: Before OpenGL 3.0, all framebuffers are required to have a color
 		// attachment no matter what.
-		framebuffer.addColorAttachment(0, get(0).getMainTexture());
 		framebuffer.noDrawBuffers();
 
 		return framebuffer;
@@ -317,6 +316,8 @@ public class RenderTargets {
 			}
 
 			RenderTarget target = this.get(drawBuffers[i]);
+
+			target.createIfEmpty();
 
 			int textureId = stageWritesToMain.contains(drawBuffers[i]) ? target.getMainTexture() : target.getAltTexture();
 

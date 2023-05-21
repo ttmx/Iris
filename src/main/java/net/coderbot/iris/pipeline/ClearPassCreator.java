@@ -46,7 +46,8 @@ public class ClearPassCreator {
 
 				RenderTarget target = renderTargets.get(buffer);
 				Vector4f clearColor = settings.getClearColor().orElse(defaultClearColor);
-				clearByColor.computeIfAbsent(new Vector2i(target.getWidth(), target.getHeight()), size -> new HashMap<>()).computeIfAbsent(new ClearPassInformation(clearColor, target.getWidth(), target.getHeight()), color -> new IntArrayList()).add(buffer);
+				if (!target.isCreated()) return;
+				clearByColor.computeIfAbsent(new Vector2i(target.getWidth(), target.getHeight()), size -> new HashMap<>()).computeIfAbsent(new ClearPassInformation(clearColor, target, target.getWidth(), target.getHeight()), color -> new IntArrayList()).add(buffer);
 			}
 		});
 
@@ -68,10 +69,10 @@ public class ClearPassCreator {
 					}
 
 					// No need to clear the depth buffer, since we're using Minecraft's depth buffer.
-					clearPasses.add(new ClearPass(clearInfo.getColor(), clearInfo::getWidth, clearInfo::getHeight,
+					clearPasses.add(new ClearPass(clearInfo.getColor(), () -> clearInfo.getTarget().isCreated(), clearInfo::getWidth, clearInfo::getHeight,
 						renderTargets.createClearFramebuffer(true, clearBuffers), GL21C.GL_COLOR_BUFFER_BIT));
 
-					clearPasses.add(new ClearPass(clearInfo.getColor(), clearInfo::getWidth, clearInfo::getHeight,
+					clearPasses.add(new ClearPass(clearInfo.getColor(), () -> clearInfo.getTarget().isCreated(), clearInfo::getWidth, clearInfo::getHeight,
 						renderTargets.createClearFramebuffer(false, clearBuffers), GL21C.GL_COLOR_BUFFER_BIT));
 				}
 			});
@@ -121,10 +122,10 @@ public class ClearPassCreator {
 				}
 
 				// No need to clear the depth buffer, since we're using Minecraft's depth buffer.
-				clearPasses.add(new ClearPass(clearColor, renderTargets::getResolution, renderTargets::getResolution,
+				clearPasses.add(new ClearPass(clearColor, () -> true, renderTargets::getResolution, renderTargets::getResolution,
 					renderTargets.createFramebufferWritingToAlt(clearBuffers), GL21C.GL_COLOR_BUFFER_BIT));
 
-				clearPasses.add(new ClearPass(clearColor, renderTargets::getResolution, renderTargets::getResolution,
+				clearPasses.add(new ClearPass(clearColor, () -> true, renderTargets::getResolution, renderTargets::getResolution,
 					renderTargets.createFramebufferWritingToMain(clearBuffers), GL21C.GL_COLOR_BUFFER_BIT));
 			}
 		});

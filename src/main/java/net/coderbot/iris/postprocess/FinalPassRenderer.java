@@ -226,6 +226,10 @@ public class FinalPassRenderer {
 			FullScreenQuadRenderer.INSTANCE.renderQuad();
 
 			FullScreenQuadRenderer.INSTANCE.end();
+
+			for (int i : finalPass.mipmappedBuffers) {
+				resetRenderTarget(renderTargets.get(i));
+			}
 		} else {
 			// If there are no passes, we somehow need to transfer the content of the Iris color render targets into
 			// the main Minecraft framebuffer.
@@ -243,11 +247,6 @@ public class FinalPassRenderer {
 		}
 
 		RenderSystem.activeTexture(GL15C.GL_TEXTURE0);
-
-		for (int i = 0; i < renderTargets.getRenderTargetCount(); i++) {
-			// Reset mipmapping states at the end of the frame.
-			resetRenderTarget(renderTargets.get(i));
-		}
 
 		for (SwapPass swapPass : swapPasses) {
 			// NB: We need to use bind(), not bindAsReadBuffer()... Previously we used bindAsReadBuffer() here which
@@ -306,6 +305,8 @@ public class FinalPassRenderer {
 		//
 		// Also note that this only applies to one of the two buffers in a render target buffer pair - making it
 		// unlikely that this issue occurs in practice with most shader packs.
+		if (texture == 0) return;
+
 		IrisRenderSystem.generateMipmaps(texture, GL20C.GL_TEXTURE_2D);
 
 		int filter = GL20C.GL_LINEAR_MIPMAP_LINEAR;
@@ -323,6 +324,8 @@ public class FinalPassRenderer {
 		if (target.getInternalFormat().getPixelFormat().isInteger()) {
 			filter = GL20C.GL_NEAREST;
 		}
+
+		if (target.getMainTexture() == 0) return;
 
 		IrisRenderSystem.texParameteri(target.getMainTexture(), GL20C.GL_TEXTURE_2D, GL20C.GL_TEXTURE_MIN_FILTER, filter);
 		IrisRenderSystem.texParameteri(target.getAltTexture(), GL20C.GL_TEXTURE_2D, GL20C.GL_TEXTURE_MIN_FILTER, filter);
