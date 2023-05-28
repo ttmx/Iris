@@ -318,6 +318,8 @@ public class RenderTargets {
 
 			RenderTarget target = this.get(drawBuffers[i]);
 
+			target.createIfEmpty();
+
 			int textureId = stageWritesToMain.contains(drawBuffers[i]) ? target.getMainTexture() : target.getAltTexture();
 
 			framebuffer.addColorAttachment(i, textureId);

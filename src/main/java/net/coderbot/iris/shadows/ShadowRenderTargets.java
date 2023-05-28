@@ -143,6 +143,8 @@ public class ShadowRenderTargets {
 			buffersToBeCleared.add(index);
 		}
 
+		targets[index].create();
+
 		fullClearRequired = true;
 		pipeline.onShadowBufferChange();
 	}

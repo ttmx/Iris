@@ -3,7 +3,6 @@ package net.coderbot.iris.samplers;
 import com.google.common.collect.ImmutableSet;
 import net.coderbot.iris.gl.image.GlImage;
 import net.coderbot.iris.gl.image.ImageHolder;
-import net.coderbot.iris.gl.program.ProgramImages;
 import net.coderbot.iris.gl.texture.InternalTextureFormat;
 import net.coderbot.iris.rendertarget.RenderTarget;
 import net.coderbot.iris.rendertarget.RenderTargets;
@@ -23,6 +22,8 @@ public class IrisImages {
 			IntSupplier textureID = () -> {
 				ImmutableSet<Integer> flippedBuffers = flipped.get();
 				RenderTarget target = renderTargets.get(index);
+
+				target.createIfEmpty();
 
 				if (flippedBuffers.contains(index)) {
 					return target.getAltTexture();
