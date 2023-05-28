@@ -161,6 +161,7 @@ public class FinalPassRenderer {
 		public int target;
 		public int width;
 		public int height;
+		public boolean disabled;
 		GlFramebuffer from;
 		int targetTexture;
 	}
@@ -258,6 +259,8 @@ public class FinalPassRenderer {
 			// which is what bindAsReadBuffer() binds.
 			//
 			// Also note that RenderTargets already calls readBuffer(0) for us.
+			if (swapPass.disabled) continue;
+
 			swapPass.from.bind();
 
 			RenderSystem.bindTexture(swapPass.targetTexture);
@@ -285,6 +288,10 @@ public class FinalPassRenderer {
 		for (SwapPass swapPass : swapPasses) {
 			RenderTarget target = renderTargets.get(swapPass.target);
 			renderTargets.destroyFramebuffer(swapPass.from);
+			if (!target.isCreated()) {
+				swapPass.disabled = true;
+				continue;
+			}
 			swapPass.from = renderTargets.createColorFramebuffer(ImmutableSet.of(), new int[] {swapPass.target});
 			swapPass.width = target.getWidth();
 			swapPass.height = target.getHeight();
@@ -294,6 +301,7 @@ public class FinalPassRenderer {
 
 	private static void setupMipmapping(RenderTarget target, boolean readFromAlt) {
 		int texture = readFromAlt ? target.getAltTexture() : target.getMainTexture();
+		if (!target.isCreated()) return;
 
 		// TODO: Only generate the mipmap if a valid mipmap hasn't been generated or if we've written to the buffer
 		// (since the last mipmap was generated)
@@ -323,6 +331,7 @@ public class FinalPassRenderer {
 		if (target.getInternalFormat().getPixelFormat().isInteger()) {
 			filter = GL20C.GL_NEAREST;
 		}
+		if (!target.isCreated()) return;
 
 		IrisRenderSystem.texParameteri(target.getMainTexture(), GL20C.GL_TEXTURE_2D, GL20C.GL_TEXTURE_MIN_FILTER, filter);
 		IrisRenderSystem.texParameteri(target.getAltTexture(), GL20C.GL_TEXTURE_2D, GL20C.GL_TEXTURE_MIN_FILTER, filter);

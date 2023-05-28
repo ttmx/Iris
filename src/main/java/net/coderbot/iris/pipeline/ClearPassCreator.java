@@ -14,6 +14,7 @@ import net.coderbot.iris.vendored.joml.Vector4f;
 import org.lwjgl.opengl.GL21C;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -45,6 +46,7 @@ public class ClearPassCreator {
 				}
 
 				RenderTarget target = renderTargets.get(buffer);
+				if (!target.isCreated()) return;
 				Vector4f clearColor = settings.getClearColor().orElse(defaultClearColor);
 				clearByColor.computeIfAbsent(new Vector2i(target.getWidth(), target.getHeight()), size -> new HashMap<>()).computeIfAbsent(new ClearPassInformation(clearColor, target.getWidth(), target.getHeight()), color -> new IntArrayList()).add(buffer);
 			}

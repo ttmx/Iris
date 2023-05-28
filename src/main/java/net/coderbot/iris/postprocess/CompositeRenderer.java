@@ -310,6 +310,8 @@ public class CompositeRenderer {
 	private static void setupMipmapping(net.coderbot.iris.rendertarget.RenderTarget target, boolean readFromAlt) {
 		int texture = readFromAlt ? target.getAltTexture() : target.getMainTexture();
 
+		if (!target.isCreated()) return;
+
 		// TODO: Only generate the mipmap if a valid mipmap hasn't been generated or if we've written to the buffer
 		// (since the last mipmap was generated)
 		//

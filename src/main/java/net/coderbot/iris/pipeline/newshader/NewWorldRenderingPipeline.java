@@ -97,6 +97,7 @@ import org.lwjgl.opengl.GL30C;
 import org.lwjgl.opengl.GL43C;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -105,6 +106,7 @@ import java.util.OptionalInt;
 import java.util.Set;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
+import java.util.stream.IntStream;
 
 public class NewWorldRenderingPipeline implements WorldRenderingPipeline, CoreWorldRenderingPipeline, RenderTargetStateListener {
 	private final RenderTargets renderTargets;
@@ -441,10 +443,6 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, CoreWo
 		BlockRenderingSettings.INSTANCE.setSeparateEntityDraws(programSet.getPackDirectives().shouldUseSeparateEntityDraws());
 		BlockRenderingSettings.INSTANCE.setUseExtendedVertexFormat(true);
 
-		this.clearPassesFull = ClearPassCreator.createClearPasses(renderTargets, true,
-				programSet.getPackDirectives().getRenderTargetDirectives());
-		this.clearPasses = ClearPassCreator.createClearPasses(renderTargets, false,
-				programSet.getPackDirectives().getRenderTargetDirectives());
 
 		if (shadowRenderTargets == null && shadowDirectives.isShadowEnabled() == OptionalBoolean.TRUE) {
 			shadowRenderTargets = new ShadowRenderTargets(this, shadowMapResolution, shadowDirectives);
@@ -491,6 +489,10 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, CoreWo
 		this.customUniforms.optimise();
 		boolean hasRun = false;
 
+		this.clearPassesFull = ClearPassCreator.createClearPasses(renderTargets, true,
+			programSet.getPackDirectives().getRenderTargetDirectives());
+		this.clearPasses = ClearPassCreator.createClearPasses(renderTargets, false,
+			programSet.getPackDirectives().getRenderTargetDirectives());
 		for (ComputeProgram program : setup) {
 			if (program != null) {
 				if (!hasRun) {
