@@ -7,8 +7,10 @@ import net.coderbot.iris.gl.texture.InternalTextureFormat;
 import net.coderbot.iris.gl.texture.PixelFormat;
 import net.coderbot.iris.gl.texture.PixelType;
 import net.coderbot.iris.vendored.joml.Vector2i;
+import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL11C;
 import org.lwjgl.opengl.GL13C;
+import org.lwjgl.opengl.GL43C;
 
 import java.nio.ByteBuffer;
 
@@ -57,6 +59,9 @@ public class RenderTarget {
 		setupTexture(mainTexture, width, height, !isPixelFormatInteger);
 		setupTexture(altTexture, width, height, !isPixelFormatInteger);
 
+		GL43C.glObjectLabel(GL11.GL_TEXTURE, mainTexture, internalFormat.name() + " " + width + " " + height + " texture ");
+		GL43C.glObjectLabel(GL11.GL_TEXTURE, altTexture, internalFormat.name() + " " + width + " " + height + " texture alt");
+
 		// Clean up after ourselves
 		// This is strictly defensive to ensure that other buggy code doesn't tamper with our textures
 		GlStateManager._bindTexture(0);
@@ -83,7 +88,12 @@ public class RenderTarget {
 
 	// Package private, call CompositeRenderTargets#resizeIfNeeded instead.
 	void resize(int width, int height) {
+		if (!isCreated()) {
+			return;
+		}
 		requireValid();
+
+		if (this.width == width && this.height == height) return;
 
 		this.width = width;
 		this.height = height;
@@ -91,6 +101,8 @@ public class RenderTarget {
 		resizeTexture(mainTexture, width, height);
 
 		resizeTexture(altTexture, width, height);
+
+		GlStateManager._bindTexture(0);
 	}
 
 	public InternalTextureFormat getInternalFormat() {
