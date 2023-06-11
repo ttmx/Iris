@@ -16,7 +16,7 @@ public class ExternalPackBrowserScreen extends Screen implements HudHideable {
 	private @Nullable ExternalPackBrowserList browserList = null;
 	private EditBox searchBox;
 	private final ExternalPackBrowser browser = new ExternalPackBrowser();
-	private final Screen parent;
+	final Screen parent;
 
 	public ExternalPackBrowserScreen(Screen parent) {
 		super(new TranslatableComponent("options.iris.shaderPackBrowser.title"));
@@ -39,11 +39,7 @@ public class ExternalPackBrowserScreen extends Screen implements HudHideable {
 
 	@Override
 	public void render(PoseStack poseStack, int mouseX, int mouseY, float delta) {
-		if (this.minecraft.level == null) {
-			this.renderBackground(poseStack);
-		} else {
-			this.fillGradient(poseStack, 0, 0, width, height, 0x4F232323, 0x4F232323);
-		}
+		this.renderBackground(poseStack);
 
 		if (browserList != null) {
 			this.browserList.render(poseStack, mouseX, mouseY, delta);
@@ -69,7 +65,7 @@ public class ExternalPackBrowserScreen extends Screen implements HudHideable {
 
 		this.addWidget(this.searchBox);
 		this.addWidget(this.browserList);
-		this.addRenderableWidget(new Button(center + 78, this.height - 27, 152, 20,
+		this.addRenderableWidget(new Button(center, this.height - 27, 152, 20,
 			CommonComponents.GUI_DONE, button -> onClose()));
 
 		if (inWorld) {

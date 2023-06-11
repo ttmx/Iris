@@ -6,11 +6,14 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import net.coderbot.iris.IrisLogging;
+import net.coderbot.iris.gui.screen.browser.PackInstallerScreen;
 import net.irisshaders.iris.api.v0.browser.IrisPackDownloadSource;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.ConfirmLinkScreen;
+import net.minecraft.client.gui.screens.ConfirmScreen;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.TextComponent;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
@@ -34,22 +37,36 @@ public class IrisApiV0ModrinthPackDownloadSource implements IrisPackDownloadSour
 		new PackEntryAction("options.iris.modrinthPack.openPage", (entry, exe) -> {
 			final Screen parent = Minecraft.getInstance().screen;
 
-			Minecraft.getInstance().setScreen(new ConfirmLinkScreen(
-				opened -> {
-					if (opened) {
-						try {
-							Util.getPlatform().openUrl(new URL(entry.pageUrl()));
-						} catch (MalformedURLException e) {
-							throw new RuntimeException(e);
+			if (Minecraft.getInstance().getWindow().isFullscreen()) {
+				Minecraft.getInstance().setScreen(new ConfirmScreen(
+					opened -> {
+						if (opened) {
+							Minecraft.getInstance().getWindow().toggleFullScreen();
+							try {
+								showPackInstall(parent, entry, exe, true);
+							} catch (MalformedURLException e) {
+								throw new RuntimeException(e);
+							}
+						} else {
+							Minecraft.getInstance().setScreen(parent);
 						}
-					}
-					Minecraft.getInstance().setScreen(parent);
-				},
-				entry.pageUrl(),
-				true
-			));
+					},
+					new TextComponent("Exit Fullscreen"),
+					new TextComponent("For Iris to download any shaders, it must exit fullscreen. Are you OK with this?")
+				));
+			} else {
+				try {
+					showPackInstall(parent, entry, exe, false);
+				} catch (MalformedURLException e) {
+					throw new RuntimeException(e);
+				}
+			}
 		})
 	};
+
+	private static void showPackInstall(Screen parent, PackEntry entry, ExecutorService exe, boolean wasFullscreen) throws MalformedURLException {
+		Minecraft.getInstance().setScreen(new PackInstallerScreen(parent, entry.title(), new URL(entry.pageUrl()), wasFullscreen));
+	}
 
 	public static final String API = "https://api.modrinth.com/v2";
 	public static final String SITE = "https://modrinth.com/shader";
@@ -102,7 +119,7 @@ public class IrisApiV0ModrinthPackDownloadSource implements IrisPackDownloadSour
 
 			try {
 				String response = this.http.execute(request, new BasicResponseHandler());
-				logger.info("GET " + endpoint);
+				//logger.info("GET " + endpoint);
 
 				JsonObject json = gson.fromJson(response, JsonObject.class);
 				JsonArray hits = json.getAsJsonArray("hits");
@@ -134,7 +151,7 @@ public class IrisApiV0ModrinthPackDownloadSource implements IrisPackDownloadSour
 		HttpGet request = new HttpGet(uri);
 		request.setHeader("content-type", "image/png");
 		HttpResponse response = this.http.execute(request);
-		logger.info("GET " + uri);
+		//logger.info("GET " + uri);
 
 		return response.getEntity().getContent();
 	}

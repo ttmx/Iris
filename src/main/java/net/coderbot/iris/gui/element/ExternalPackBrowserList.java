@@ -223,7 +223,7 @@ public class ExternalPackBrowserList extends IrisObjectSelectionList<ExternalPac
 		}
 
 		private void updatePage(int page) {
-			this.pageNumber.text = new TextComponent(Integer.toString(page));
+			this.pageNumber.text = new TextComponent(Integer.toString(page + 1));
 			this.pagePrevious.disabled = page <= 0;
 			this.pageNext.disabled = this.browser.atMaxPage();
 		}
