@@ -69,6 +69,13 @@ public class IrisElementRow {
 	}
 
 	/**
+	 * @return the width of the entire element row
+	 */
+	public int getRowWidth() {
+		return this.width;
+	}
+
+	/**
 	 * Renders the row, with the anchor point being the top left.
 	 */
 	public void render(PoseStack poseStack, int x, int y, int height, int mouseX, int mouseY, float tickDelta, boolean rowHovered) {
