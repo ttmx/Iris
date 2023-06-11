@@ -7,6 +7,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import net.coderbot.iris.IrisLogging;
 import net.irisshaders.iris.api.v0.browser.IrisPackDownloadSource;
+import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.ConfirmLinkScreen;
 import net.minecraft.client.gui.screens.Screen;
@@ -18,6 +19,8 @@ import org.apache.http.impl.client.HttpClients;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -32,7 +35,16 @@ public class IrisApiV0ModrinthPackDownloadSource implements IrisPackDownloadSour
 			final Screen parent = Minecraft.getInstance().screen;
 
 			Minecraft.getInstance().setScreen(new ConfirmLinkScreen(
-				opened -> Minecraft.getInstance().setScreen(parent),
+				opened -> {
+					if (opened) {
+						try {
+							Util.getPlatform().openUrl(new URL(entry.pageUrl()));
+						} catch (MalformedURLException e) {
+							throw new RuntimeException(e);
+						}
+					}
+					Minecraft.getInstance().setScreen(parent);
+				},
 				entry.pageUrl(),
 				true
 			));
@@ -40,7 +52,7 @@ public class IrisApiV0ModrinthPackDownloadSource implements IrisPackDownloadSour
 	};
 
 	public static final String API = "https://api.modrinth.com/v2";
-	public static final String SITE = "https://shaders-pre-product.modrinth.com/shader";
+	public static final String SITE = "https://modrinth.com/shader";
 	public static final int MAX_INTERVAL_MS = 1200; // Requests sent at shorter intervals than this will be considered "rapid"
 	public static final int RAPID_REQUEST_LIMIT = 35; // After this many "rapid" requests, do not send any more
 

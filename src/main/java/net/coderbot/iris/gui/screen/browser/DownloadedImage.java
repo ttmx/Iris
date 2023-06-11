@@ -1,6 +1,7 @@
 package net.coderbot.iris.gui.screen.browser;
 
 import com.mojang.blaze3d.platform.NativeImage;
+import com.mojang.blaze3d.systems.RenderSystem;
 import net.coderbot.iris.Iris;
 import net.irisshaders.iris.api.v0.browser.IrisPackDownloadSource;
 import net.minecraft.client.Minecraft;
@@ -36,12 +37,15 @@ public class DownloadedImage implements Closeable {
 		executor.submit(() -> {
 			try (InputStream data = source.queryImageSynchronously(uri)) {
 				NativeImage image = NativeImage.read(data);
-				DynamicTexture texture = new DynamicTexture(image);
-				ResourceLocation location = new ResourceLocation(Iris.MODID, "download/" + UUID.randomUUID());
-				client.getTextureManager().register(location, texture);
+				// Yes, this sucks. I know. TODO fix this
+				RenderSystem.recordRenderCall(() -> {
+					DynamicTexture texture = new DynamicTexture(image);
+					ResourceLocation location = new ResourceLocation(Iris.MODID, "download/" + UUID.randomUUID());
+					client.getTextureManager().register(location, texture);
 
-				future.complete(
-					new DownloadedImage(client.getTextureManager(), texture, location, (double) image.getWidth() / image.getHeight()));
+					future.complete(
+						new DownloadedImage(client.getTextureManager(), texture, location, (double) image.getWidth() / image.getHeight()));
+				});
 				return;
 			} catch (Throwable ex) {
 				future.completeExceptionally(ex);

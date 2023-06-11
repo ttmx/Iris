@@ -15,6 +15,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.IntConsumer;
@@ -31,7 +32,7 @@ public class ExternalPackBrowser {
 	private @Nullable Component statusMessage = null;
 	private IrisPackDownloadSource packDownloadSource;
 	private List<IrisPackDownloadSource.PackEntry> entries = List.of();
-	private final Map<IrisPackDownloadSource.PackEntry, DownloadedImage> packIcons = new HashMap<>();
+	private final Map<IrisPackDownloadSource.PackEntry, DownloadedImage> packIcons = new ConcurrentHashMap<>();
 	private int page;
 	private String pendingSearchQuery = "";
 	private String searchQuery = "";
