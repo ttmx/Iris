@@ -38,29 +38,6 @@ public class ProgramSamplers {
 	}
 
 	public void update() {
-		if (active != null) {
-			active.removeListeners();
-		}
-
-		active = this;
-
-		if (initializer != null) {
-			for (GlUniform1iCall call : initializer) {
-				RenderSystem.glUniform1i(call.getLocation(), call.getValue());
-			}
-
-			initializer = null;
-		}
-
-		// We need to keep the active texture intact, since if we mess it up
-		// in the middle of RenderType setup, bad things will happen.
-		int activeTexture = GlStateManagerAccessor.getActiveTexture();
-
-		for (SamplerBinding samplerBinding : samplerBindings) {
-			samplerBinding.update();
-		}
-
-		RenderSystem.activeTexture(GL20C.GL_TEXTURE0 + activeTexture);
 	}
 
 	public void removeListeners() {

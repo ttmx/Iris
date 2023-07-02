@@ -5,6 +5,7 @@ import com.mojang.blaze3d.shaders.ProgramManager;
 import net.coderbot.iris.Iris;
 import net.coderbot.iris.gl.GlResource;
 import net.coderbot.iris.gl.IrisRenderSystem;
+import net.coderbot.iris.pipeline.newshader.NewWorldRenderingPipeline;
 import org.lwjgl.opengl.GL43C;
 
 public final class Program extends GlResource {
@@ -26,8 +27,6 @@ public final class Program extends GlResource {
 
 
 		uniforms.update();
-		samplers.update();
-		images.update();
 	}
 
 	public static void unbind() {

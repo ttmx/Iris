@@ -117,6 +117,7 @@ public class CommonTransformer {
 			boolean core) {
 		// TODO: What if the shader does gl_PerVertex.gl_FogFragCoord ?
 
+
 		root.rename("gl_FogFragCoord", "iris_FogFragCoord");
 
 		// TODO: This doesn't handle geometry shaders... How do we do that?
@@ -370,6 +371,17 @@ public class CommonTransformer {
 			tree.injectNode(ASTInjectionPoint.BEFORE_DECLARATIONS, inputDeclarationTemplate.getInstanceFor(root,
 				new StorageQualifier(storageType),
 				new BuiltinNumericTypeSpecifier(type),
+				new Identifier(name)));
+		}
+	}
+
+	public static void addIfNotExistsSampler(Root root, ASTParser t, TranslationUnit tree, String name, BuiltinFixedTypeSpecifier.BuiltinType type,
+									   StorageType storageType) {
+		if (root.externalDeclarationIndex.getStream(name)
+			.noneMatch((entry) -> entry.declaration() instanceof DeclarationExternalDeclaration)) {
+			tree.injectNode(ASTInjectionPoint.BEFORE_DECLARATIONS, inputDeclarationTemplate.getInstanceFor(root,
+				new StorageQualifier(storageType),
+				new BuiltinFixedTypeSpecifier(type),
 				new Identifier(name)));
 		}
 	}

@@ -23,13 +23,12 @@ public class TextureSamplerState {
 
 	public void bindWithoutSampler() {
 		int texture = textureSupplier.getAsInt();
-		if (lastBoundId == texture) return;
 		IrisRenderSystem.bindTextureToUnit(target, unit, texture);
 		lastBoundId = texture;
 	}
 
 	public void resetSampler() {
-		IrisRenderSystem.bindSamplerToUnit(unit, defaultSampler.getId());
+		IrisRenderSystem.bindSamplerToUnit(unit, defaultSampler == null ? 0 : defaultSampler.getId());
 	}
 
 	public void bindWithSampler() {

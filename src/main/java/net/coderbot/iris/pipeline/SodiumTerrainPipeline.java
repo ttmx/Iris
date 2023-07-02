@@ -2,6 +2,8 @@ package net.coderbot.iris.pipeline;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.primitives.Ints;
+import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import me.jellysquid.mods.sodium.client.gl.shader.ShaderLoader;
 import me.jellysquid.mods.sodium.client.render.vertex.type.ChunkVertexType;
 import net.coderbot.iris.gl.blending.AlphaTest;
@@ -17,9 +19,12 @@ import net.coderbot.iris.pipeline.newshader.ShaderAttributeInputs;
 import net.coderbot.iris.pipeline.transform.PatchShaderType;
 import net.coderbot.iris.pipeline.transform.TransformPatcher;
 import net.coderbot.iris.rendertarget.RenderTargets;
+import net.coderbot.iris.shaderpack.PackRenderTargetDirectives;
 import net.coderbot.iris.shaderpack.ProgramSet;
 import net.coderbot.iris.shaderpack.ProgramSource;
 import net.coderbot.iris.shaderpack.loading.ProgramId;
+import net.coderbot.iris.shaderpack.transform.StringTransformations;
+import net.coderbot.iris.shadows.ShadowRenderTargets;
 import net.coderbot.iris.uniforms.CommonUniforms;
 import net.coderbot.iris.uniforms.builtin.BuiltinReplacementUniforms;
 import net.minecraft.resources.ResourceLocation;
@@ -79,10 +84,14 @@ public class SodiumTerrainPipeline {
 
 	private final IntFunction<ProgramImages> createTerrainImages;
 	private final IntFunction<ProgramImages> createShadowImages;
+	private ImmutableSet<Integer> flippedAfterPrepare;
+	private ImmutableSet<Integer> flippedAfterTranslucent;
+	private RenderTargets renderTargets;
+	private Supplier<ShadowRenderTargets> shadowRenderTargets;
 
 	public SodiumTerrainPipeline(WorldRenderingPipeline parent, ProgramSet programSet, IntFunction<ProgramSamplers> createTerrainSamplers,
 								 IntFunction<ProgramSamplers> createShadowSamplers, IntFunction<ProgramImages> createTerrainImages, IntFunction<ProgramImages> createShadowImages,
-								 RenderTargets targets,
+								 RenderTargets targets, Supplier<ShadowRenderTargets> shadowRenderTargets,
 								 ImmutableSet<Integer> flippedAfterPrepare,
 								 ImmutableSet<Integer> flippedAfterTranslucent, GlFramebuffer shadowFramebuffer, CustomUniforms customUniforms) {
 		this.parent = Objects.requireNonNull(parent);
@@ -94,6 +103,11 @@ public class SodiumTerrainPipeline {
 
 		this.programSet = programSet;
 		this.shadowFramebuffer = shadowFramebuffer;
+
+		this.flippedAfterPrepare = flippedAfterPrepare;
+		this.flippedAfterTranslucent = flippedAfterTranslucent;
+		this.renderTargets = targets;
+		this.shadowRenderTargets = shadowRenderTargets;
 
 		terrainSolidSource.ifPresent(sources -> terrainSolidFramebuffer = targets.createGbufferFramebuffer(flippedAfterPrepare,
 				sources.getDirectives().getDrawBuffers()));
@@ -144,13 +158,27 @@ public class SodiumTerrainPipeline {
 				}
 			});
 
+			Object2ObjectMap<String, String> replacementNames = new Object2ObjectOpenHashMap<>();
+
+			for (int i = 0; i < renderTargets.getRenderTargetCount(); i++) {
+				replacementNames.put("colortex" + i, "colortex" + i + (flippedAfterPrepare.contains(i) ? "alt" : "main"));
+
+				if (i < PackRenderTargetDirectives.LEGACY_RENDER_TARGETS.size()) {
+					replacementNames.put(PackRenderTargetDirectives.LEGACY_RENDER_TARGETS.get(i), "colortex" + i + (flippedAfterPrepare.contains(i) ? "alt" : "main"));
+				}
+			}
+
+			for (int i = 0; i < shadowRenderTargets.get().getRenderTargetCount(); i++) {
+				replacementNames.put("shadowcolor" + i, "shadowcolor" + i + (shadowRenderTargets.get().isFlipped(i) ? "alt" : "main"));
+			}
+
 			Map<PatchShaderType, String> transformed = TransformPatcher.patchSodium(
 				sources.getName(),
 				sources.getVertexSource().orElse(null),
 				sources.getGeometrySource().orElse(null),
 				sources.getFragmentSource().orElse(null),
 				AlphaTest.ALWAYS, inputs,
-				vertexType.getPositionScale(), vertexType.getPositionOffset(), vertexType.getTextureScale(), parent.getTextureMap());
+				vertexType.getPositionScale(), vertexType.getPositionOffset(), vertexType.getTextureScale(), parent.getTextureMap(), replacementNames);
 			terrainSolidVertex = Optional.ofNullable(transformed.get(PatchShaderType.VERTEX));
 			terrainSolidGeometry = Optional.ofNullable(transformed.get(PatchShaderType.GEOMETRY));
 			terrainSolidFragment = Optional.ofNullable(transformed.get(PatchShaderType.FRAGMENT));
@@ -175,13 +203,26 @@ public class SodiumTerrainPipeline {
 			});
 			terrainCutoutAlpha = sources.getDirectives().getAlphaTestOverride().or(terrainCutoutDefault);
 
+			Object2ObjectMap<String, String> replacementNames = new Object2ObjectOpenHashMap<>();
+
+			for (int i = 0; i < renderTargets.getRenderTargetCount(); i++) {
+				replacementNames.put("colortex" + i, "colortex" + i + (flippedAfterPrepare.contains(i) ? "alt" : "main"));
+
+				if (i < PackRenderTargetDirectives.LEGACY_RENDER_TARGETS.size()) {
+					replacementNames.put(PackRenderTargetDirectives.LEGACY_RENDER_TARGETS.get(i), "colortex" + i + (flippedAfterPrepare.contains(i) ? "alt" : "main"));
+				}
+			}
+
+			for (int i = 0; i < shadowRenderTargets.get().getRenderTargetCount(); i++) {
+				replacementNames.put("shadowcolor" + i, "shadowcolor" + i + (shadowRenderTargets.get().isFlipped(i) ? "alt" : "main"));
+			}
 			Map<PatchShaderType, String> transformed = TransformPatcher.patchSodium(
 				sources.getName(),
 				sources.getVertexSource().orElse(null),
 				sources.getGeometrySource().orElse(null),
 				sources.getFragmentSource().orElse(null),
 				terrainCutoutAlpha.orElse(AlphaTests.ONE_TENTH_ALPHA), inputs,
-				vertexType.getPositionScale(), vertexType.getPositionOffset(), vertexType.getTextureScale(), parent.getTextureMap());
+				vertexType.getPositionScale(), vertexType.getPositionOffset(), vertexType.getTextureScale(), parent.getTextureMap(), replacementNames);
 			terrainCutoutVertex = Optional.ofNullable(transformed.get(PatchShaderType.VERTEX));
 			terrainCutoutGeometry = Optional.ofNullable(transformed.get(PatchShaderType.GEOMETRY));
 			terrainCutoutFragment = Optional.ofNullable(transformed.get(PatchShaderType.FRAGMENT));
@@ -208,13 +249,27 @@ public class SodiumTerrainPipeline {
 			});
 			translucentAlpha = sources.getDirectives().getAlphaTestOverride().or(translucentDefault);
 
+			Object2ObjectMap<String, String> replacementNames = new Object2ObjectOpenHashMap<>();
+
+			for (int i = 0; i < renderTargets.getRenderTargetCount(); i++) {
+				replacementNames.put("colortex" + i, "colortex" + i + (flippedAfterTranslucent.contains(i) ? "alt" : "main"));
+
+				if (i < PackRenderTargetDirectives.LEGACY_RENDER_TARGETS.size()) {
+					replacementNames.put(PackRenderTargetDirectives.LEGACY_RENDER_TARGETS.get(i), "colortex" + i + (flippedAfterTranslucent.contains(i) ? "alt" : "main"));
+				}
+			}
+
+			for (int i = 0; i < shadowRenderTargets.get().getRenderTargetCount(); i++) {
+				replacementNames.put("shadowcolor" + i, "shadowcolor" + i + (shadowRenderTargets.get().isFlipped(i) ? "alt" : "main"));
+			}
+
 			Map<PatchShaderType, String> transformed = TransformPatcher.patchSodium(
 				sources.getName(),
 				sources.getVertexSource().orElse(null),
 				sources.getGeometrySource().orElse(null),
 				sources.getFragmentSource().orElse(null),
 				translucentAlpha.orElse(AlphaTest.ALWAYS), inputs,
-				vertexType.getPositionScale(), vertexType.getPositionOffset(), vertexType.getTextureScale(), parent.getTextureMap());
+				vertexType.getPositionScale(), vertexType.getPositionOffset(), vertexType.getTextureScale(), parent.getTextureMap(), replacementNames);
 			translucentVertex = Optional.ofNullable(transformed.get(PatchShaderType.VERTEX));
 			translucentGeometry = Optional.ofNullable(transformed.get(PatchShaderType.GEOMETRY));
 			translucentFragment = Optional.ofNullable(transformed.get(PatchShaderType.FRAGMENT));
@@ -240,20 +295,26 @@ public class SodiumTerrainPipeline {
 			});
 			shadowAlpha = sources.getDirectives().getAlphaTestOverride().or(shadowDefault);
 
+			Object2ObjectMap<String, String> replacementNames = new Object2ObjectOpenHashMap<>();
+
+			for (int i = 0; i < shadowRenderTargets.get().getRenderTargetCount(); i++) {
+				replacementNames.put("shadowcolor" + i, "shadowcolor" + i + "main");
+			}
+
 			Map<PatchShaderType, String> transformed = TransformPatcher.patchSodium(
 				sources.getName(),
 				sources.getVertexSource().orElse(null),
 				sources.getGeometrySource().orElse(null),
 				sources.getFragmentSource().orElse(null),
 				AlphaTest.ALWAYS, inputs,
-				vertexType.getPositionScale(), vertexType.getPositionOffset(), vertexType.getTextureScale(), parent.getTextureMap());
+				vertexType.getPositionScale(), vertexType.getPositionOffset(), vertexType.getTextureScale(), parent.getTextureMap(), replacementNames);
 			Map<PatchShaderType, String> transformedCutout = TransformPatcher.patchSodium(
 				sources.getName(),
 				sources.getVertexSource().orElse(null),
 				sources.getGeometrySource().orElse(null),
 				sources.getFragmentSource().orElse(null),
 				shadowAlpha.get(), inputs,
-				vertexType.getPositionScale(), vertexType.getPositionOffset(), vertexType.getTextureScale(), parent.getTextureMap());
+				vertexType.getPositionScale(), vertexType.getPositionOffset(), vertexType.getTextureScale(), parent.getTextureMap(), replacementNames);
 			shadowVertex = Optional.ofNullable(transformed.get(PatchShaderType.VERTEX));
 			shadowGeometry = Optional.ofNullable(transformed.get(PatchShaderType.GEOMETRY));
 			shadowCutoutFragment = Optional.ofNullable(transformedCutout.get(PatchShaderType.FRAGMENT));

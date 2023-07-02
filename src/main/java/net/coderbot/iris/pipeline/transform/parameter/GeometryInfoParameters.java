@@ -11,8 +11,8 @@ public abstract class GeometryInfoParameters extends Parameters {
 	// WARNING: adding new fields requires updating hashCode and equals methods!
 
 	public GeometryInfoParameters(Patch patch,
-			Object2ObjectMap<Tri<String, TextureType, TextureStage>, String> textureMap, boolean hasGeometry) {
-		super(patch, textureMap);
+			Object2ObjectMap<Tri<String, TextureType, TextureStage>, String> textureMap, Object2ObjectMap<String, String> replacementNames, boolean hasGeometry) {
+		super(patch, textureMap, replacementNames);
 		this.hasGeometry = hasGeometry;
 	}
 

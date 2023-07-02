@@ -6,6 +6,7 @@ import com.google.common.collect.ImmutableSet;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.coderbot.iris.Iris;
 import net.coderbot.iris.gl.image.GlImage;
 import net.coderbot.iris.features.FeatureFlags;
@@ -20,6 +21,7 @@ import net.coderbot.iris.gl.texture.TextureAccess;
 import net.coderbot.iris.pipeline.ShaderPrinter;
 import net.coderbot.iris.pipeline.WorldRenderingPipeline;
 import net.coderbot.iris.pipeline.newshader.FogMode;
+import net.coderbot.iris.pipeline.newshader.NewWorldRenderingPipeline;
 import net.coderbot.iris.pipeline.transform.PatchShaderType;
 import net.coderbot.iris.pipeline.transform.TransformPatcher;
 import net.coderbot.iris.postprocess.FullScreenQuadRenderer;
@@ -275,12 +277,20 @@ public class ShadowCompositeRenderer {
 	// TODO: Don't just copy this from DeferredWorldRenderingPipeline
 	private Program createProgram(ProgramSource source, ImmutableSet<Integer> flipped, ImmutableSet<Integer> flippedAtLeastOnceSnapshot,
 														   ShadowRenderTargets targets) {
+
+
+		Object2ObjectMap<String, String> replacementNames = new Object2ObjectOpenHashMap<>();
+
+		for (int i = 0; i < renderTargets.getRenderTargetCount(); i++) {
+			replacementNames.put("shadowcolor" + i, "shadowcolor" + i + (flipped.contains(i) ? "alt" : "main"));
+		}
+
 		// TODO: Properly handle empty shaders
 		Map<PatchShaderType, String> transformed = TransformPatcher.patchComposite(
 			source.getName(),
 			source.getVertexSource().orElseThrow(NullPointerException::new),
 			source.getGeometrySource().orElse(null),
-			source.getFragmentSource().orElseThrow(NullPointerException::new), TextureStage.SHADOWCOMP, pipeline.getTextureMap());
+			source.getFragmentSource().orElseThrow(NullPointerException::new), TextureStage.SHADOWCOMP, pipeline.getTextureMap(), replacementNames);
 		String vertex = transformed.get(PatchShaderType.VERTEX);
 		String geometry = transformed.get(PatchShaderType.GEOMETRY);
 		String fragment = transformed.get(PatchShaderType.FRAGMENT);
@@ -310,6 +320,8 @@ public class ShadowCompositeRenderer {
 		IrisImages.addCustomImages(builder, irisCustomImages);
 		IrisSamplers.addCustomImages(builder, irisCustomImages);
 		Program build = builder.build();
+		NewWorldRenderingPipeline.samplers.setupUniforms(build.getProgramId());
+
 		this.customUniforms.mapholderToPass(builder, build);
 
 		return build;
@@ -327,7 +339,13 @@ public class ShadowCompositeRenderer {
 				ProgramBuilder builder;
 
 				try {
-					String transformed = TransformPatcher.patchCompute(source.getName(), source.getSource().orElse(null), TextureStage.SHADOWCOMP, pipeline.getTextureMap());
+					Object2ObjectMap<String, String> replacementNames = new Object2ObjectOpenHashMap<>();
+
+					for (int i2 = 0; i2 < renderTargets.getRenderTargetCount(); i++) {
+						replacementNames.put("shadowcolor" + i2, "shadowcolor" + i2 + (flipped.contains(i2) ? "alt" : "main"));
+					}
+
+					String transformed = TransformPatcher.patchCompute(source.getName(), source.getSource().orElse(null), TextureStage.SHADOWCOMP, pipeline.getTextureMap(), replacementNames);
 
 					ShaderPrinter.printProgram(source.getName()).addSource(PatchShaderType.COMPUTE, transformed).print();
 

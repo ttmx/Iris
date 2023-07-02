@@ -6,6 +6,7 @@ import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.coderbot.iris.features.FeatureFlags;
 import net.coderbot.iris.gl.IrisRenderSystem;
 import net.coderbot.iris.gl.framebuffer.GlFramebuffer;
@@ -22,6 +23,7 @@ import net.coderbot.iris.gl.texture.TextureAccess;
 import net.coderbot.iris.pipeline.DeferredWorldRenderingPipeline;
 import net.coderbot.iris.pipeline.ShaderPrinter;
 import net.coderbot.iris.pipeline.WorldRenderingPipeline;
+import net.coderbot.iris.pipeline.newshader.NewWorldRenderingPipeline;
 import net.coderbot.iris.pipeline.transform.PatchShaderType;
 import net.coderbot.iris.pipeline.transform.TransformPatcher;
 import net.coderbot.iris.pipeline.newshader.FogMode;
@@ -273,12 +275,6 @@ public class FinalPassRenderer {
 		ProgramSamplers.clearActiveSamplers();
 		GlStateManager._glUseProgram(0);
 
-		for (int i = 0; i < SamplerLimits.get().getMaxTextureUnits(); i++) {
-			// Unbind all textures that we may have used.
-			// NB: This is necessary for shader pack reloading to work properly
-			RenderSystem.activeTexture(GL15C.GL_TEXTURE0 + i);
-			RenderSystem.bindTexture(0);
-		}
 
 		RenderSystem.activeTexture(GL15C.GL_TEXTURE0);
 	}
@@ -335,12 +331,26 @@ public class FinalPassRenderer {
 	// TODO: Don't just copy this from DeferredWorldRenderingPipeline
 	private Program createProgram(ProgramSource source, ImmutableSet<Integer> flipped, ImmutableSet<Integer> flippedAtLeastOnceSnapshot,
 								  Supplier<ShadowRenderTargets> shadowTargetsSupplier) {
+		Object2ObjectMap<String, String> replacementNames = new Object2ObjectOpenHashMap<>();
+
+		for (int i = 0; i < renderTargets.getRenderTargetCount(); i++) {
+			replacementNames.put("colortex" + i, "colortex" + i + (flipped.contains(i) ? "alt" : "main"));
+
+			if (i < PackRenderTargetDirectives.LEGACY_RENDER_TARGETS.size()) {
+				replacementNames.put(PackRenderTargetDirectives.LEGACY_RENDER_TARGETS.get(i), "colortex" + i + (flipped.contains(i) ? "alt" : "main"));
+			}
+		}
+
+		for (int i = 0; i < shadowTargetsSupplier.get().getRenderTargetCount(); i++) {
+			replacementNames.put("shadowcolor" + i, "shadowcolor" + i + (shadowTargetsSupplier.get().isFlipped(i) ? "alt" : "main"));
+		}
+
 		// TODO: Properly handle empty shaders
 		Map<PatchShaderType, String> transformed = TransformPatcher.patchComposite(
 			source.getName(),
 			source.getVertexSource().orElseThrow(NullPointerException::new),
 			source.getGeometrySource().orElse(null),
-			source.getFragmentSource().orElseThrow(NullPointerException::new), TextureStage.COMPOSITE_AND_FINAL, pipeline.getTextureMap());
+			source.getFragmentSource().orElseThrow(NullPointerException::new), TextureStage.COMPOSITE_AND_FINAL, pipeline.getTextureMap(), replacementNames);
 		String vertex = transformed.get(PatchShaderType.VERTEX);
 		String geometry = transformed.get(PatchShaderType.GEOMETRY);
 		String fragment = transformed.get(PatchShaderType.FRAGMENT);
@@ -384,6 +394,7 @@ public class FinalPassRenderer {
 		centerDepthSampler.setUsage(builder.addDynamicSampler(centerDepthSampler::getCenterDepthTexture, "iris_centerDepthSmooth"));
 
 		Program build = builder.build();
+		NewWorldRenderingPipeline.samplers.setupUniforms(build.getProgramId());
 
 		// tell the customUniforms that those locations belong to this pass
 		// this is just an object to index the internal map
@@ -404,7 +415,21 @@ public class FinalPassRenderer {
 				ProgramBuilder builder;
 
 				try {
-					String transformed =  TransformPatcher.patchCompute(source.getName(), source.getSource().orElse(null), TextureStage.COMPOSITE_AND_FINAL, pipeline.getTextureMap());
+					Object2ObjectMap<String, String> replacementNames = new Object2ObjectOpenHashMap<>();
+
+					for (int i2 = 0; i2 < renderTargets.getRenderTargetCount(); i2++) {
+						replacementNames.put("colortex" + i2, "colortex" + i2 + (flipped.contains(i2) ? "alt" : "main"));
+
+						if (i2 < PackRenderTargetDirectives.LEGACY_RENDER_TARGETS.size()) {
+							replacementNames.put(PackRenderTargetDirectives.LEGACY_RENDER_TARGETS.get(i2), "colortex" + i2 + (flipped.contains(i2) ? "alt" : "main"));
+						}
+					}
+
+					for (int i2 = 0; i2 < shadowTargetsSupplier.get().getRenderTargetCount(); i2++) {
+						replacementNames.put("shadowcolor" + i2, "shadowcolor" + i2 + (shadowTargetsSupplier.get().isFlipped(i2) ? "alt" : "main"));
+					}
+
+					String transformed =  TransformPatcher.patchCompute(source.getName(), source.getSource().orElse(null), TextureStage.COMPOSITE_AND_FINAL, pipeline.getTextureMap(), replacementNames);
 
 					ShaderPrinter.printProgram(source.getName()).addSource(PatchShaderType.COMPUTE, transformed).print();
 

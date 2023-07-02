@@ -153,6 +153,10 @@ public class ShadowRenderTargets {
 		}
 	}
 
+	public boolean doesTargetExist(int index) {
+		return !(targets[index] == null);
+	}
+
 	public int getResolution() {
 		return resolution;
 	}

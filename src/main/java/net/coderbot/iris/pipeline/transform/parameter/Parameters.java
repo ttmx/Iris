@@ -13,11 +13,13 @@ public abstract class Parameters implements JobParameters {
 	public final Patch patch;
 	public PatchShaderType type; // may only be set by TransformPatcher
 	private final Object2ObjectMap<Tri<String, TextureType, TextureStage>, String> textureMap;
+	private final Object2ObjectMap<String, String> replacementNames;
 	// WARNING: adding new fields requires updating hashCode and equals methods!
 
-	public Parameters(Patch patch, Object2ObjectMap<Tri<String, TextureType, TextureStage>, String> textureMap) {
+	public Parameters(Patch patch, Object2ObjectMap<Tri<String, TextureType, TextureStage>, String> textureMap, Object2ObjectMap<String, String> replacementNames) {
 		this.patch = patch;
 		this.textureMap = textureMap;
+		this.replacementNames = replacementNames;
 	}
 
 	public AlphaTest getAlphaTest() {
@@ -30,6 +32,10 @@ public abstract class Parameters implements JobParameters {
 		return textureMap;
 	}
 
+	public Object2ObjectMap<String, String> getReplacementNames() {
+		return replacementNames;
+	}
+
 	@Override
 	public int hashCode() {
 		final int prime = 31;
@@ -37,6 +43,7 @@ public abstract class Parameters implements JobParameters {
 		result = prime * result + ((patch == null) ? 0 : patch.hashCode());
 		result = prime * result + ((type == null) ? 0 : type.hashCode());
 		result = prime * result + ((textureMap == null) ? 0 : textureMap.hashCode());
+		result = prime * result + ((replacementNames == null) ? 0 : replacementNames.hashCode());
 		return result;
 	}
 
@@ -57,6 +64,11 @@ public abstract class Parameters implements JobParameters {
 			if (other.textureMap != null)
 				return false;
 		} else if (!textureMap.equals(other.textureMap))
+			return false;
+		if (replacementNames == null) {
+			if (other.replacementNames != null)
+				return false;
+		} else if (!replacementNames.equals(other.replacementNames))
 			return false;
 		return true;
 	}

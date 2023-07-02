@@ -48,8 +48,8 @@ public class IrisSamplersNew {
 
 		for (int i = 0; i < shadowRenderTargets.getRenderTargetCount(); i++) {
 			int finalI = i;
-			this.register(unit, TextureType.TEXTURE_2D, () -> shadowRenderTargets.get(finalI).getMainTexture(), null, "shadowcolor" + i + "main");
-			this.register(unit + 1, TextureType.TEXTURE_2D, () -> shadowRenderTargets.get(finalI).getAltTexture(), null, "shadowcolor" + i + "alt");
+			this.register(unit, TextureType.TEXTURE_2D, () -> shadowRenderTargets.doesTargetExist(finalI) ? shadowRenderTargets.get(finalI).getMainTexture() : 0, null, "shadowcolor" + i + "main");
+			this.register(unit + 1, TextureType.TEXTURE_2D, () -> shadowRenderTargets.doesTargetExist(finalI) ? shadowRenderTargets.get(finalI).getAltTexture() : 0, null, "shadowcolor" + i + "alt");
 
 			unit += 2;
 		}
@@ -99,6 +99,7 @@ public class IrisSamplersNew {
 	 * @param names The names to register the texture to.
 	 */
 	private void register(int unit, TextureType type, IntSupplier texture, GlSampler sampler, String... names) {
+		unit += 10;
 		TextureSamplerState state = new TextureSamplerState(names, type.getGlType(), unit, texture, sampler);
 		for (String name : names) {
 			textureState.put(name, state);
@@ -107,7 +108,7 @@ public class IrisSamplersNew {
 		textures.put(unit, state);
 	}
 
-	private void rebindTextures() {
+	public void rebindTextures() {
 		textures.forEach((unit, texture) -> {
 			texture.bindWithSampler();
 		});

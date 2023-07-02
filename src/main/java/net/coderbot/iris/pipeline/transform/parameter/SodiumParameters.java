@@ -20,11 +20,11 @@ public class SodiumParameters extends Parameters {
 	public AlphaTest alpha;
 
 	public SodiumParameters(Patch patch,
-			Object2ObjectMap<Tri<String, TextureType, TextureStage>, String> textureMap,
+			Object2ObjectMap<Tri<String, TextureType, TextureStage>, String> textureMap, Object2ObjectMap<String, String> replacementNames,
 			AlphaTest alpha,
 			ShaderAttributeInputs inputs,
 			float positionScale, float positionOffset, float textureScale) {
-		super(patch, textureMap);
+		super(patch, textureMap, replacementNames);
 		this.inputs = inputs;
 		this.positionScale = positionScale;
 		this.positionOffset = positionOffset;

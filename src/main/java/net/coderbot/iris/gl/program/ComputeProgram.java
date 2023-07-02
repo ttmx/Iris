@@ -6,6 +6,7 @@ import net.coderbot.iris.Iris;
 import net.coderbot.iris.gl.GlResource;
 import net.coderbot.iris.gl.IrisRenderSystem;
 import net.coderbot.iris.pipeline.WorldRenderingPipeline;
+import net.coderbot.iris.pipeline.newshader.NewWorldRenderingPipeline;
 import net.coderbot.iris.uniforms.custom.CustomUniforms;
 import org.joml.Vector2f;
 import org.joml.Vector3i;
@@ -57,10 +58,10 @@ public final class ComputeProgram extends GlResource {
 
 	public void use() {
 		ProgramManager.glUseProgram(getGlId());
-
 		uniforms.update();
-		samplers.update();
-		images.update();
+		NewWorldRenderingPipeline.samplers.setupUniforms(getGlId());
+		NewWorldRenderingPipeline.samplers.rebindTextures();
+
 	}
 
 	public void dispatch(float width, float height) {
