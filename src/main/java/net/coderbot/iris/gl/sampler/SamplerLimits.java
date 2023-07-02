@@ -12,7 +12,7 @@ public class SamplerLimits {
 	private static SamplerLimits instance;
 
 	private SamplerLimits() {
-		this.maxTextureUnits = GlStateManager._getInteger(GL20C.GL_MAX_TEXTURE_IMAGE_UNITS);
+		this.maxTextureUnits = GlStateManager._getInteger(GL20C.GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS);
 		this.maxDrawBuffers = GlStateManager._getInteger(GL20C.GL_MAX_DRAW_BUFFERS);
 		this.maxShaderStorageUnits = IrisRenderSystem.supportsSSBO() ? GlStateManager._getInteger(GL45C.GL_MAX_SHADER_STORAGE_BUFFER_BINDINGS) : 0;
 	}

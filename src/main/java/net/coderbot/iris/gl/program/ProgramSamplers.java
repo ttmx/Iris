@@ -76,7 +76,7 @@ public class ProgramSamplers {
 			active.removeListeners();
 		}
 
-		IrisRenderSystem.unbindAllSamplers();
+		//IrisRenderSystem.unbindAllSamplers();
 	}
 
 	public static Builder builder(int program, Set<Integer> reservedTextureUnits) {

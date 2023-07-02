@@ -4,6 +4,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import net.coderbot.iris.Iris;
 import net.coderbot.iris.gl.GLDebug;
 import net.coderbot.iris.samplers.IrisSamplers;
+import net.coderbot.iris.samplers.IrisSamplersNew;
 import net.coderbot.iris.texture.TextureTracker;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.client.renderer.texture.TextureManager;
@@ -23,6 +24,7 @@ public class MixinRenderSystem {
 		GLDebug.initRenderer();
 		IrisRenderSystem.initRenderer();
 		IrisSamplers.initRenderer();
+		IrisSamplersNew.initRenderer();
 		Iris.onRenderSystemInit();
 	}
 
