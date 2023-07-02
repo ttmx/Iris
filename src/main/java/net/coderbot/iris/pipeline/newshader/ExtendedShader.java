@@ -106,6 +106,8 @@ public class ExtendedShader extends ShaderInstance implements ShaderInstanceInte
 		this.parent = parent;
 		this.inputs = inputs;
 
+		NewWorldRenderingPipeline.samplers.setupUniforms(programId);
+
 		this.modelViewInverse = this.getUniform("ModelViewMatInverse");
 		this.projectionInverse = this.getUniform("ProjMatInverse");
 		this.normalMatrix = this.getUniform("NormalMat");

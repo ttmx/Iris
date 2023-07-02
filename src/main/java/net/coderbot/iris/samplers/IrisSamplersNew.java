@@ -35,12 +35,20 @@ public class IrisSamplersNew {
 	private final Object2IntMap<String> bindings = new Object2IntOpenHashMap<>();
 
 	public IrisSamplersNew(RenderTargets renderTargets, ShadowRenderTargets shadowRenderTargets, CustomTextureManager customTextureManager, WorldRenderingPipeline worldRenderingPipeline, ProgramSet programSet) {
+		bindings.put("tex", 0);
+		bindings.put("gtexture", 0);
+		bindings.put("terrain", 0);
+		bindings.put("overlay", 1);
+		bindings.put("iris_overlay", 1);
+		bindings.put("lightmap", 2);
+
+
 		this.register(3, customTextureManager.getNoiseTexture().getType(), customTextureManager.getNoiseTexture().getTextureId(), null, "noisetex");
 		this.register(4, TextureType.TEXTURE_2D, worldRenderingPipeline::getCurrentNormalTexture, null, "normals");
 		this.register(5, TextureType.TEXTURE_2D, worldRenderingPipeline::getCurrentSpecularTexture, null, "specular");
 		this.register(6, TextureType.TEXTURE_2D, () -> shadowRenderTargets.getDepthTexture().getTextureId(), programSet.getPack().hasFeature(FeatureFlags.SEPARATE_HARDWARE_SAMPLERS) ? null : (shadowRenderTargets.isHardwareFiltered(0) ? shadowRenderTargets.isLinearFiltered(0) ? SHADOW_SAMPLER_LINEAR : SHADOW_SAMPLER_NEAREST : null), "shadowtex0", "shadow");
 		this.register(7, TextureType.TEXTURE_2D, () -> shadowRenderTargets.getDepthTextureNoTranslucents().getTextureId(), programSet.getPack().hasFeature(FeatureFlags.SEPARATE_HARDWARE_SAMPLERS) ? null : (shadowRenderTargets.isHardwareFiltered(1) ? shadowRenderTargets.isLinearFiltered(1) ? SHADOW_SAMPLER_LINEAR : SHADOW_SAMPLER_NEAREST : null), "shadowtex1");
-		this.register(8, TextureType.TEXTURE_2D, renderTargets::getDepthTexture, null, "depthtex0");
+		this.register(8, TextureType.TEXTURE_2D, renderTargets::getDepthTexture, null, "depthtex0", "gdepthtex");
 		this.register(9, TextureType.TEXTURE_2D, () -> renderTargets.getDepthTextureNoTranslucents().getTextureId(), null, "depthtex1");
 		this.register(10, TextureType.TEXTURE_2D, () -> renderTargets.getDepthTextureNoHand().getTextureId(), null, "depthtex2");
 

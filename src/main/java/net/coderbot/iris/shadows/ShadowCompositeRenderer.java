@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
+import it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.coderbot.iris.Iris;
@@ -44,6 +45,7 @@ import org.lwjgl.opengl.GL30C;
 import org.lwjgl.opengl.GL43C;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -279,7 +281,7 @@ public class ShadowCompositeRenderer {
 														   ShadowRenderTargets targets) {
 
 
-		Object2ObjectMap<String, String> replacementNames = new Object2ObjectOpenHashMap<>();
+		Map<String, String> replacementNames = new Object2ObjectOpenHashMap<>();
 
 		for (int i = 0; i < renderTargets.getRenderTargetCount(); i++) {
 			replacementNames.put("shadowcolor" + i, "shadowcolor" + i + (flipped.contains(i) ? "alt" : "main"));
@@ -339,11 +341,10 @@ public class ShadowCompositeRenderer {
 				ProgramBuilder builder;
 
 				try {
-					Object2ObjectMap<String, String> replacementNames = new Object2ObjectOpenHashMap<>();
+					Map<String, String> replacementNames = new HashMap<>();
 
-					for (int i2 = 0; i2 < renderTargets.getRenderTargetCount(); i++) {
-						replacementNames.put("shadowcolor" + i2, "shadowcolor" + i2 + (flipped.contains(i2) ? "alt" : "main"));
-					}
+					replacementNames.putIfAbsent("shadowcolor0", "shadowcolor0" + (flipped.contains(0) ? "alt" : "main"));
+					replacementNames.putIfAbsent("shadowcolor1", "shadowcolor1" + (flipped.contains(1) ? "alt" : "main"));
 
 					String transformed = TransformPatcher.patchCompute(source.getName(), source.getSource().orElse(null), TextureStage.SHADOWCOMP, pipeline.getTextureMap(), replacementNames);
 

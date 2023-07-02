@@ -8,6 +8,8 @@ import net.coderbot.iris.pipeline.newshader.ShaderAttributeInputs;
 import net.coderbot.iris.pipeline.transform.Patch;
 import net.coderbot.iris.shaderpack.texture.TextureStage;
 
+import java.util.Map;
+
 public class SodiumParameters extends Parameters {
 	public final ShaderAttributeInputs inputs;
 	public final float positionScale;
@@ -20,7 +22,7 @@ public class SodiumParameters extends Parameters {
 	public AlphaTest alpha;
 
 	public SodiumParameters(Patch patch,
-			Object2ObjectMap<Tri<String, TextureType, TextureStage>, String> textureMap, Object2ObjectMap<String, String> replacementNames,
+			Object2ObjectMap<Tri<String, TextureType, TextureStage>, String> textureMap, Map<String, String> replacementNames,
 			AlphaTest alpha,
 			ShaderAttributeInputs inputs,
 			float positionScale, float positionOffset, float textureScale) {

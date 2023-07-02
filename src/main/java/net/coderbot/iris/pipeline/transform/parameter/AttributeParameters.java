@@ -7,12 +7,14 @@ import net.coderbot.iris.helpers.Tri;
 import net.coderbot.iris.pipeline.transform.Patch;
 import net.coderbot.iris.shaderpack.texture.TextureStage;
 
+import java.util.Map;
+
 public class AttributeParameters extends GeometryInfoParameters {
 	public final InputAvailability inputs;
 	// WARNING: adding new fields requires updating hashCode and equals methods!
 
 	public AttributeParameters(Patch patch,
-			Object2ObjectMap<Tri<String, TextureType, TextureStage>, String> textureMap, Object2ObjectMap<String, String> replacementNames,
+			Object2ObjectMap<Tri<String, TextureType, TextureStage>, String> textureMap, Map<String, String> replacementNames,
 			boolean hasGeometry,
 			InputAvailability inputs) {
 		super(patch, textureMap, replacementNames, hasGeometry);

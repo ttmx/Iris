@@ -107,6 +107,7 @@ import org.lwjgl.opengl.GL43C;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalInt;
@@ -664,7 +665,7 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, CoreWo
 		Supplier<ImmutableSet<Integer>> flipped =
 			() -> isBeforeTranslucent ? flippedAfterPrepare : flippedAfterTranslucent;
 
-		Object2ObjectMap<String, String> replacementNames = new Object2ObjectOpenHashMap<>();
+		Map<String, String> replacementNames = new Object2ObjectOpenHashMap<>();
 
 		for (int i = 0; i < renderTargets.getRenderTargetCount(); i++) {
 			replacementNames.put("colortex" + i, "colortex" + i + (flipped.get().contains(i) ? "alt" : "main"));
@@ -730,7 +731,7 @@ public class NewWorldRenderingPipeline implements WorldRenderingPipeline, CoreWo
 		Supplier<ImmutableSet<Integer>> flipped = () -> flippedBeforeShadow;
 
 
-		Object2ObjectMap<String, String> replacementNames = new Object2ObjectOpenHashMap<>();
+		Map<String, String> replacementNames = new Object2ObjectOpenHashMap<>();
 
 		for (int i = 0; i < shadowRenderTargets.getRenderTargetCount(); i++) {
 			replacementNames.put("shadowcolor" + i, "shadowcolor" + i + (shadowRenderTargets.isFlipped(i) ? "alt" : "main"));

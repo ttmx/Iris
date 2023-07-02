@@ -368,6 +368,7 @@ public class ShaderProperties {
 					return;
 				}
 				String newSamplerName = "customtex" + customTexAmount;
+				customTexAmount++;
 
 				irisCustomTextures.put(newSamplerName, new TextureDefinition.PNGDefinition(value));
 

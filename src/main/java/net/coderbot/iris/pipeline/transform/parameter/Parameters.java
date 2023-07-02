@@ -9,14 +9,16 @@ import net.coderbot.iris.pipeline.transform.Patch;
 import net.coderbot.iris.pipeline.transform.PatchShaderType;
 import net.coderbot.iris.shaderpack.texture.TextureStage;
 
+import java.util.Map;
+
 public abstract class Parameters implements JobParameters {
 	public final Patch patch;
 	public PatchShaderType type; // may only be set by TransformPatcher
 	private final Object2ObjectMap<Tri<String, TextureType, TextureStage>, String> textureMap;
-	private final Object2ObjectMap<String, String> replacementNames;
+	private final Map<String, String> replacementNames;
 	// WARNING: adding new fields requires updating hashCode and equals methods!
 
-	public Parameters(Patch patch, Object2ObjectMap<Tri<String, TextureType, TextureStage>, String> textureMap, Object2ObjectMap<String, String> replacementNames) {
+	public Parameters(Patch patch, Object2ObjectMap<Tri<String, TextureType, TextureStage>, String> textureMap, Map<String, String> replacementNames) {
 		this.patch = patch;
 		this.textureMap = textureMap;
 		this.replacementNames = replacementNames;
@@ -32,7 +34,7 @@ public abstract class Parameters implements JobParameters {
 		return textureMap;
 	}
 
-	public Object2ObjectMap<String, String> getReplacementNames() {
+	public Map<String, String> getReplacementNames() {
 		return replacementNames;
 	}
 

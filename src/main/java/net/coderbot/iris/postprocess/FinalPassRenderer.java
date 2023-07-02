@@ -331,8 +331,10 @@ public class FinalPassRenderer {
 	// TODO: Don't just copy this from DeferredWorldRenderingPipeline
 	private Program createProgram(ProgramSource source, ImmutableSet<Integer> flipped, ImmutableSet<Integer> flippedAtLeastOnceSnapshot,
 								  Supplier<ShadowRenderTargets> shadowTargetsSupplier) {
-		Object2ObjectMap<String, String> replacementNames = new Object2ObjectOpenHashMap<>();
-
+		Map<String, String> replacementNames = new Object2ObjectOpenHashMap<>();
+		replacementNames.put("gtexture", "colortex" + 0 + (flipped.contains(0) ? "alt" : "main"));
+		replacementNames.put("terrain", "colortex" + 0 + (flipped.contains(0) ? "alt" : "main"));
+		replacementNames.put("tex", "colortex" + 0 + (flipped.contains(0) ? "alt" : "main"));
 		for (int i = 0; i < renderTargets.getRenderTargetCount(); i++) {
 			replacementNames.put("colortex" + i, "colortex" + i + (flipped.contains(i) ? "alt" : "main"));
 
@@ -415,7 +417,7 @@ public class FinalPassRenderer {
 				ProgramBuilder builder;
 
 				try {
-					Object2ObjectMap<String, String> replacementNames = new Object2ObjectOpenHashMap<>();
+					Map<String, String> replacementNames = new Object2ObjectOpenHashMap<>();
 
 					for (int i2 = 0; i2 < renderTargets.getRenderTargetCount(); i2++) {
 						replacementNames.put("colortex" + i2, "colortex" + i2 + (flipped.contains(i2) ? "alt" : "main"));

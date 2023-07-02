@@ -8,6 +8,8 @@ import net.coderbot.iris.pipeline.newshader.ShaderAttributeInputs;
 import net.coderbot.iris.pipeline.transform.Patch;
 import net.coderbot.iris.shaderpack.texture.TextureStage;
 
+import java.util.Map;
+
 public class VanillaParameters extends GeometryInfoParameters {
 	public final AlphaTest alpha;
 	public final ShaderAttributeInputs inputs;
@@ -17,7 +19,7 @@ public class VanillaParameters extends GeometryInfoParameters {
 
 	public VanillaParameters(
 			Patch patch,
-			Object2ObjectMap<Tri<String, TextureType, TextureStage>, String> textureMap, Object2ObjectMap<String, String> replacementNames,
+			Object2ObjectMap<Tri<String, TextureType, TextureStage>, String> textureMap, Map<String, String> replacementNames,
 			AlphaTest alpha, boolean isLines, boolean hasChunkOffset,
 			ShaderAttributeInputs inputs, boolean hasGeometry) {
 		super(patch, textureMap, replacementNames, hasGeometry);

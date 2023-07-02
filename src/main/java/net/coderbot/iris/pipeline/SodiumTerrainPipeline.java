@@ -158,7 +158,7 @@ public class SodiumTerrainPipeline {
 				}
 			});
 
-			Object2ObjectMap<String, String> replacementNames = new Object2ObjectOpenHashMap<>();
+			Map<String, String> replacementNames = new Object2ObjectOpenHashMap<>();
 
 			for (int i = 0; i < renderTargets.getRenderTargetCount(); i++) {
 				replacementNames.put("colortex" + i, "colortex" + i + (flippedAfterPrepare.contains(i) ? "alt" : "main"));
@@ -203,7 +203,7 @@ public class SodiumTerrainPipeline {
 			});
 			terrainCutoutAlpha = sources.getDirectives().getAlphaTestOverride().or(terrainCutoutDefault);
 
-			Object2ObjectMap<String, String> replacementNames = new Object2ObjectOpenHashMap<>();
+			Map<String, String> replacementNames = new Object2ObjectOpenHashMap<>();
 
 			for (int i = 0; i < renderTargets.getRenderTargetCount(); i++) {
 				replacementNames.put("colortex" + i, "colortex" + i + (flippedAfterPrepare.contains(i) ? "alt" : "main"));
@@ -249,7 +249,7 @@ public class SodiumTerrainPipeline {
 			});
 			translucentAlpha = sources.getDirectives().getAlphaTestOverride().or(translucentDefault);
 
-			Object2ObjectMap<String, String> replacementNames = new Object2ObjectOpenHashMap<>();
+			Map<String, String> replacementNames = new Object2ObjectOpenHashMap<>();
 
 			for (int i = 0; i < renderTargets.getRenderTargetCount(); i++) {
 				replacementNames.put("colortex" + i, "colortex" + i + (flippedAfterTranslucent.contains(i) ? "alt" : "main"));
@@ -295,7 +295,7 @@ public class SodiumTerrainPipeline {
 			});
 			shadowAlpha = sources.getDirectives().getAlphaTestOverride().or(shadowDefault);
 
-			Object2ObjectMap<String, String> replacementNames = new Object2ObjectOpenHashMap<>();
+			Map<String, String> replacementNames = new Object2ObjectOpenHashMap<>();
 
 			for (int i = 0; i < shadowRenderTargets.get().getRenderTargetCount(); i++) {
 				replacementNames.put("shadowcolor" + i, "shadowcolor" + i + "main");

@@ -7,12 +7,14 @@ import net.coderbot.iris.helpers.Tri;
 import net.coderbot.iris.pipeline.transform.Patch;
 import net.coderbot.iris.shaderpack.texture.TextureStage;
 
+import java.util.Map;
+
 public class TextureStageParameters extends Parameters {
 	private final TextureStage stage;
 	// WARNING: adding new fields requires updating hashCode and equals methods!
 
 	public TextureStageParameters(Patch patch, TextureStage stage,
-			Object2ObjectMap<Tri<String, TextureType, TextureStage>, String> textureMap, Object2ObjectMap<String, String> replacementNames) {
+			Object2ObjectMap<Tri<String, TextureType, TextureStage>, String> textureMap, Map<String, String> replacementNames) {
 		super(patch, textureMap, replacementNames);
 		this.stage = stage;
 	}
