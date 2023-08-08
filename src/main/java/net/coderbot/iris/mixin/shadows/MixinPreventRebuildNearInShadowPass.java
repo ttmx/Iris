@@ -36,6 +36,9 @@ public abstract class MixinPreventRebuildNearInShadowPass {
 	@Shadow
 	protected abstract void applyFrustum(Frustum frustum);
 
+	// This doesn't work as intended in 1.18+.
+	/*
+
 	@Group(name = "iris_MixinPreventRebuildNearInShadowPass", min = 1, max = 1)
 	@Inject(method = "setupRender",
 			at = @At(value = "INVOKE",
@@ -61,5 +64,5 @@ public abstract class MixinPreventRebuildNearInShadowPass {
 			require = 0)
 	private void iris$cannotInject(Camera camera, Frustum frustum, boolean bl, boolean bl2, CallbackInfo ci) {
 		// Dummy injection just to assert that either Sodium is present, or the vanilla injection passed.
-	}
+	}*/
 }
