@@ -99,8 +99,9 @@ public class XHFPTerrainVertex implements ChunkVertexEncoder, ContextAwareVertex
 
 		MemoryUtil.memPutShort(ptr + 28, contextHolder.blockId);
 		MemoryUtil.memPutShort(ptr + 30, contextHolder.renderType);
-		MemoryUtil.memPutInt(ptr + 32, contextHolder.ignoreMidBlock ? 0 : ExtendedDataHelper.computeMidBlock(vertex.x, vertex.y, vertex.z, contextHolder.localPosX, contextHolder.localPosY, contextHolder.localPosZ));
-		MemoryUtil.memPutInt(ptr + 36, vertex.color);
+		var brightness = ColorU8.byteToNormalizedFloat(ColorABGR.unpackAlpha(vertex.color));
+
+		MemoryUtil.memPutInt(ptr + 32, contextHolder.ignoreMidBlock ? 0 : ExtendedDataHelper.computeMidBlock(vertex.x, vertex.y, vertex.z, contextHolder.localPosX, contextHolder.localPosY, contextHolder.localPosZ, brightness));
 
 		if (vertexCount == 4) {
 			vertexCount = 0;
@@ -135,18 +136,13 @@ public class XHFPTerrainVertex implements ChunkVertexEncoder, ContextAwareVertex
 			uSum *= 0.25f;
 			vSum *= 0.25f;
 
-			short midU = XHFPModelVertexType.encodeTexture(uSum);
-			short midV = XHFPModelVertexType.encodeTexture(vSum);
+			int midU = XHFPModelVertexType.encodeTexture(uSum);
+			int midV = XHFPModelVertexType.encodeTexture(vSum);
 
-			MemoryUtil.memPutShort(ptr + 16, midU);
-			MemoryUtil.memPutShort(ptr + 16 - STRIDE, midU);
-			MemoryUtil.memPutShort(ptr + 16 - STRIDE * 2, midU);
-			MemoryUtil.memPutShort(ptr + 16 - STRIDE * 3, midU);
-
-			MemoryUtil.memPutShort(ptr + 18, midV);
-			MemoryUtil.memPutShort(ptr + 18 - STRIDE, midV);
-			MemoryUtil.memPutShort(ptr + 18 - STRIDE * 2, midV);
-			MemoryUtil.memPutShort(ptr + 18 - STRIDE * 3, midV);
+			MemoryUtil.memPutInt(ptr + 16, (midU << 0) | (midV << 16));
+			MemoryUtil.memPutInt(ptr + 16 - STRIDE, (midU << 0) | (midV << 16));
+			MemoryUtil.memPutInt(ptr + 16 - STRIDE * 2, (midU << 0) | (midV << 16));
+			MemoryUtil.memPutInt(ptr + 16 - STRIDE * 3, (midU << 0) | (midV << 16));
 
 			uSum = 0;
 			vSum = 0;
