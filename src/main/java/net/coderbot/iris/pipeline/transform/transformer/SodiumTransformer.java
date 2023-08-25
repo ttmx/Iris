@@ -76,7 +76,7 @@ public class SodiumTransformer {
 		if (parameters.type.glShaderType == ShaderType.VERTEX) {
 			if (parameters.inputs.hasNormal()) {
 				root.replaceReferenceExpressions(t, "gl_Normal", "iris_Normal");
-				addIfNotExists(root, t, tree, "iris_Normal", Type.F32VEC3, StorageQualifier.StorageType.IN);
+				//addIfNotExists(root, t, tree, "iris_Normal", Type.F32VEC3, StorageQualifier.StorageType.IN);
 			} else {
 				root.replaceReferenceExpressions(t, "gl_Normal", "vec3(0.0, 0.0, 1.0)");
 			}
@@ -132,11 +132,57 @@ public class SodiumTransformer {
 		CommonTransformer.applyIntelHd4000Workaround(root);
 	}
 
+	public static void replaceTangent(
+		ASTParser t,
+		TranslationUnit tree,
+		Root root,
+		SodiumParameters parameters) {
+		root.replaceReferenceExpressions(t, "at_tangent", "iris_tangent");
+		tree.parseAndInjectNodes(t, ASTInjectionPoint.BEFORE_FUNCTIONS, "in vec4 iris_qTangent;", "vec4 iris_tangent;", "vec3 iris_Normal;",
+			"""
+					vec3 xAxis( vec4 qQuat )
+					{
+					    float fTy  = 2.0 * qQuat.y;
+					    float fTz  = 2.0 * qQuat.z;
+					    float fTwy = fTy * qQuat.w;
+					    float fTwz = fTz * qQuat.w;
+					    float fTxy = fTy * qQuat.x;
+					    float fTxz = fTz * qQuat.x;
+					    float fTyy = fTy * qQuat.y;
+					    float fTzz = fTz * qQuat.z;
+					    return vec3( 1.0-(fTyy+fTzz), fTxy+fTwz, fTxz-fTwy );
+					}
+				""", """
+					vec3 yAxis( vec4 qQuat )
+				 {
+				     float fTx  = 2.0 * qQuat.x;
+				     float fTy  = 2.0 * qQuat.y;
+				     float fTz  = 2.0 * qQuat.z;
+				     float fTwx = fTx * qQuat.w;
+				     float fTwz = fTz * qQuat.w;
+				     float fTxx = fTx * qQuat.x;
+				     float fTxy = fTy * qQuat.x;
+				     float fTyz = fTz * qQuat.y;
+				     float fTzz = fTz * qQuat.z;
+
+				     return vec3( fTxy-fTwz, 1.0-(fTxx+fTzz), fTyz+fTwx );
+				 }
+				"""
+   			,"""
+			void _tangent_init() {
+				vec4 qtangent = normalize( iris_qTangent ); //Needed because of the quantization caused by 16-bit SNORM
+				iris_Normal = xAxis( qtangent );
+				iris_tangent = vec4(yAxis( qtangent ), sign( iris_qTangent.w ));
+			}
+			""");
+	}
+
 	public static void injectVertInit(
 			ASTParser t,
 			TranslationUnit tree,
 			Root root,
 			SodiumParameters parameters) {
+		replaceTangent(t, tree, root, parameters);
 		tree.parseAndInjectNodes(t, ASTInjectionPoint.BEFORE_FUNCTIONS,
 				// translated from sodium's chunk_vertex.glsl
 				"in uvec4 in_VertexData;",
@@ -186,6 +232,7 @@ public class SodiumTransformer {
 			addIfNotExists(root, t, tree, "iris_midBlock", Type.F32VEC4, StorageQualifier.StorageType.IN);
 		}
 		tree.prependMainFunctionBody(t, "_vert_init();");
+		tree.prependMainFunctionBody(t, "_tangent_init();");
 	}
 
 

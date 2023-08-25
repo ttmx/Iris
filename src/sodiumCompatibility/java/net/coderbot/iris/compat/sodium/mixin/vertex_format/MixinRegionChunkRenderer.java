@@ -39,9 +39,7 @@ public abstract class MixinRegionChunkRenderer extends ShaderChunkRenderer {
 				new GlVertexAttributeBinding(IrisChunkShaderBindingPoints.MID_TEX_COORD,
 						vertexFormat.getAttribute(IrisChunkMeshAttributes.MID_TEX_COORD)),
 				new GlVertexAttributeBinding(IrisChunkShaderBindingPoints.TANGENT,
-						vertexFormat.getAttribute(IrisChunkMeshAttributes.TANGENT)),
-				new GlVertexAttributeBinding(IrisChunkShaderBindingPoints.NORMAL,
-						vertexFormat.getAttribute(IrisChunkMeshAttributes.NORMAL))
+						vertexFormat.getAttribute(IrisChunkMeshAttributes.TANGENT))
 		);
 
 		return TessellationBinding.forVertexBuffer(buffer, attributes);

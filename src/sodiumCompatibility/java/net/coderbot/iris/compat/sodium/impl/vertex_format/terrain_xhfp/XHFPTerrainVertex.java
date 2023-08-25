@@ -7,7 +7,11 @@ import net.caffeinemc.mods.sodium.api.util.ColorU8;
 import net.coderbot.iris.compat.sodium.impl.block_context.BlockContextHolder;
 import net.coderbot.iris.compat.sodium.impl.block_context.ContextAwareVertexWriter;
 import net.coderbot.iris.vertices.NormI8;
+import net.coderbot.iris.vertices.QTangentCalculator;
+import net.coderbot.iris.vertices.QuadView;
 import net.minecraft.util.Mth;
+import org.joml.Matrix3f;
+import org.joml.Quaternionf;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 import net.coderbot.iris.vertices.ExtendedDataHelper;
@@ -21,7 +25,7 @@ import static net.coderbot.iris.compat.sodium.impl.vertex_format.terrain_xhfp.XH
 import static net.coderbot.iris.compat.sodium.impl.vertex_format.terrain_xhfp.XHFPModelVertexType.encodePosition;
 import static net.coderbot.iris.compat.sodium.impl.vertex_format.terrain_xhfp.XHFPModelVertexType.encodeTexture;
 
-public class XHFPTerrainVertex implements ChunkVertexEncoder, ContextAwareVertexWriter {
+public class XHFPTerrainVertex implements ChunkVertexEncoder, ContextAwareVertexWriter, QuadView {
 	private final Vector3f normal = new Vector3f();
 
 	private BlockContextHolder contextHolder;
@@ -57,19 +61,8 @@ public class XHFPTerrainVertex implements ChunkVertexEncoder, ContextAwareVertex
 		this.flush();
 	}*/
 
-	private final Vector3f[] posHolder = new Vector3f[] {
-		new Vector3f(),
-		new Vector3f(),
-		new Vector3f(),
-		new Vector3f()
-	};
-
-	private final Vector2f[] uvHolder = new Vector2f[] {
-		new Vector2f(),
-		new Vector2f(),
-		new Vector2f(),
-		new Vector2f()
-	};
+	private long writePointer;
+	private QTangentCalculator qTangentCalc = new QTangentCalculator();
 
 	@Override
 	public void iris$setContextHolder(BlockContextHolder holder) {
@@ -80,6 +73,36 @@ public class XHFPTerrainVertex implements ChunkVertexEncoder, ContextAwareVertex
 	public void flipUpcomingQuadNormal() {
 		flipUpcomingNormal = true;
 	}
+   	static float bias = 1.0f / (2^(8 - 1) - 1);
+
+	Quaternionf tangent_space_to_quat(Vector3f normal, Vector3f tangent, Vector3f bitangent) {
+		Matrix3f tbn = new Matrix3f(normal, tangent, bitangent);
+		Quaternionf qTangent = new Quaternionf();
+		qTangent.normalize();
+
+		//Make sure QTangent is always positive
+		if (qTangent.w < 0)
+			qTangent.set(-qTangent.x, -qTangent.y, -qTangent.z, -qTangent.w);
+
+
+		//Because '-0' sign information is lost when using integers,
+		//we need to apply a "bias"; while making sure the Quaternion
+		//stays normalized.
+		// ** Also our shaders assume qTangent.w is never 0. **
+		if (qTangent.w < bias) {
+			float normFactor = (float) Math.sqrt( 1 - bias * bias );
+			qTangent.w = bias;
+			qTangent.x *= normFactor;
+			qTangent.y *= normFactor;
+			qTangent.z *= normFactor;
+		}
+
+		//If it's reflected, then make sure .w is negative.
+		Vector3f naturalBinormal = tangent.cross(normal);
+		if (naturalBinormal.dot(bitangent) <= 0)
+			qTangent.set(-qTangent.x, -qTangent.y, -qTangent.z, -qTangent.w);
+		return qTangent;
+	}
 
 	@Override
 	public long write(long ptr,
@@ -87,8 +110,7 @@ public class XHFPTerrainVertex implements ChunkVertexEncoder, ContextAwareVertex
 		uSum += vertex.u;
 		vSum += vertex.v;
 
-		posHolder[vertexCount].set(vertex.x, vertex.y, vertex.z);
-		uvHolder[vertexCount].set(vertex.u, vertex.v);
+		this.writePointer = ptr;
 
 		vertexCount++;
 
@@ -97,11 +119,11 @@ public class XHFPTerrainVertex implements ChunkVertexEncoder, ContextAwareVertex
 		MemoryUtil.memPutInt(ptr + 8, (encodeColor(vertex.color) << 0) | (encodeLight(vertex.light) << 24));
 		MemoryUtil.memPutInt(ptr + 12, (encodeTexture(vertex.u) << 0) | (encodeTexture(vertex.v) << 16));
 
-		MemoryUtil.memPutShort(ptr + 28, contextHolder.blockId);
-		MemoryUtil.memPutShort(ptr + 30, contextHolder.renderType);
+		MemoryUtil.memPutShort(ptr + 24, contextHolder.blockId);
+		MemoryUtil.memPutShort(ptr + 26, contextHolder.renderType);
 		var brightness = ColorU8.byteToNormalizedFloat(ColorABGR.unpackAlpha(vertex.color));
 
-		MemoryUtil.memPutInt(ptr + 32, contextHolder.ignoreMidBlock ? 0 : ExtendedDataHelper.computeMidBlock(vertex.x, vertex.y, vertex.z, contextHolder.localPosX, contextHolder.localPosY, contextHolder.localPosZ, brightness));
+		MemoryUtil.memPutInt(ptr + 28, contextHolder.ignoreMidBlock ? 0 : ExtendedDataHelper.computeMidBlock(vertex.x, vertex.y, vertex.z, contextHolder.localPosX, contextHolder.localPosY, contextHolder.localPosZ, brightness));
 
 		if (vertexCount == 4) {
 			vertexCount = 0;
@@ -151,28 +173,41 @@ public class XHFPTerrainVertex implements ChunkVertexEncoder, ContextAwareVertex
 			// Implementation based on the algorithm found here:
 			// https://github.com/IrisShaders/ShaderDoc/blob/master/vertex-format-extensions.md#surface-normal-vector
 
-			if (flipUpcomingNormal) {
-				NormalHelper.computeFaceNormalFlipped(normal, posHolder);
-				flipUpcomingNormal = false;
-			} else {
-				NormalHelper.computeFaceNormalArray(normal, posHolder);
-			}
-
-			int packedNormal = NormI8.pack(normal);
-
-			MemoryUtil.memPutInt(ptr + 24, packedNormal);
-			MemoryUtil.memPutInt(ptr + 24 - STRIDE, packedNormal);
-			MemoryUtil.memPutInt(ptr + 24 - STRIDE * 2, packedNormal);
-			MemoryUtil.memPutInt(ptr + 24 - STRIDE * 3, packedNormal);
-
-			int tangent = NormalHelper.computeTangentArray(normal.x, normal.y, normal.z, posHolder, uvHolder);
+			int tangent = qTangentCalc.calculateQTangent(flipUpcomingNormal, this);
 
 			MemoryUtil.memPutInt(ptr + 20, tangent);
 			MemoryUtil.memPutInt(ptr + 20 - STRIDE, tangent);
 			MemoryUtil.memPutInt(ptr + 20 - STRIDE * 2, tangent);
 			MemoryUtil.memPutInt(ptr + 20 - STRIDE * 3, tangent);
+
+			flipUpcomingNormal = false;
 		}
 
 		return ptr + STRIDE;
+	}
+
+	@Override
+	public float x(int index) {
+		return XHFPModelVertexType.decodePosition(MemoryUtil.memGetShort(writePointer - STRIDE * (3L - index)));
+	}
+
+	@Override
+	public float y(int index) {
+		return XHFPModelVertexType.decodePosition(MemoryUtil.memGetShort(writePointer + 2 - STRIDE * (3L - index)));
+	}
+
+	@Override
+	public float z(int index) {
+		return XHFPModelVertexType.decodePosition(MemoryUtil.memGetShort(writePointer + 4 - STRIDE * (3L - index)));
+	}
+
+	@Override
+	public float u(int index) {
+		return XHFPModelVertexType.decodeTexture(MemoryUtil.memGetShort(writePointer + 12 - STRIDE * (3L - index)));
+	}
+
+	@Override
+	public float v(int index) {
+		return XHFPModelVertexType.decodeTexture(MemoryUtil.memGetShort(writePointer + 14 - STRIDE * (3L - index)));
 	}
 }

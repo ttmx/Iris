@@ -15,15 +15,14 @@ import net.coderbot.iris.compat.sodium.impl.vertex_format.terrain_xhfp.XHFPTerra
 import org.lwjgl.system.MemoryUtil;
 
 public class XHFPModelVertexType implements ChunkVertexType {
-	public static final int STRIDE = 36;
+	public static final int STRIDE = 32;
 
 	public static final GlVertexFormat<ChunkMeshAttribute> VERTEX_FORMAT = GlVertexFormat.builder(ChunkMeshAttribute.class, STRIDE)
 		.addElement(ChunkMeshAttribute.VERTEX_DATA, 0, GlVertexAttributeFormat.UNSIGNED_INT, 4, false, true)
 		.addElement(IrisChunkMeshAttributes.MID_TEX_COORD, 16, GlVertexAttributeFormat.UNSIGNED_SHORT, 2, false, false)
 		.addElement(IrisChunkMeshAttributes.TANGENT, 20, IrisGlVertexAttributeFormat.BYTE, 4, true, false)
-		.addElement(IrisChunkMeshAttributes.NORMAL, 24, IrisGlVertexAttributeFormat.BYTE, 3, true, false)
-		.addElement(IrisChunkMeshAttributes.BLOCK_ID, 28, IrisGlVertexAttributeFormat.SHORT, 2, false, false)
-		.addElement(IrisChunkMeshAttributes.MID_BLOCK, 32, IrisGlVertexAttributeFormat.BYTE, 4, false, false)
+		.addElement(IrisChunkMeshAttributes.BLOCK_ID, 24, IrisGlVertexAttributeFormat.SHORT, 2, false, false)
+		.addElement(IrisChunkMeshAttributes.MID_BLOCK, 28, IrisGlVertexAttributeFormat.BYTE, 4, false, false)
 		.build();
 
 	private static final int POSITION_MAX_VALUE = 65536;
@@ -44,6 +43,10 @@ public class XHFPModelVertexType implements ChunkVertexType {
 
 	static int encodePosition(float value) {
 		return (int) ((MODEL_ORIGIN + value) * (POSITION_MAX_VALUE / MODEL_SCALE));
+	}
+
+	public static float decodePosition(short i) {
+		return ((float) i) - (32.0f / 65536.0f) - 8.0f;
 	}
 
 	static int encodeDrawParameters(Material material, int sectionIndex) {
@@ -73,5 +76,9 @@ public class XHFPModelVertexType implements ChunkVertexType {
 
 	static int encodeTexture(float value) {
 		return (int) (Math.min(0.99999997F, value) * TEXTURE_MAX_VALUE);
+	}
+
+	static float decodeTexture(short value) {
+		return ((float) value) * (1.0f / 65536.0f);
 	}
 }

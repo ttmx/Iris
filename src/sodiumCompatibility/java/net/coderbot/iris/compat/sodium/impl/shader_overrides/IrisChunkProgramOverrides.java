@@ -178,8 +178,7 @@ public class IrisChunkProgramOverrides {
 					.bindAttribute("in_VertexData", ChunkShaderBindingPoints.ATTRIBUTE_PACKED_DATA)
                     .bindAttribute("mc_Entity", IrisChunkShaderBindingPoints.BLOCK_ID)
                     .bindAttribute("mc_midTexCoord", IrisChunkShaderBindingPoints.MID_TEX_COORD)
-                    .bindAttribute("at_tangent", IrisChunkShaderBindingPoints.TANGENT)
-                    .bindAttribute("iris_Normal", IrisChunkShaderBindingPoints.NORMAL)
+                    .bindAttribute("iris_qTangent", IrisChunkShaderBindingPoints.TANGENT)
                     //.bindAttribute("iris_AOHolder", IrisChunkShaderBindingPoints.AO)
 					.bindAttribute("iris_midBlock", IrisChunkShaderBindingPoints.MID_BLOCK)
 					.link((shader) -> {
