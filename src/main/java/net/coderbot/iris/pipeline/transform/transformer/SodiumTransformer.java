@@ -140,39 +140,17 @@ public class SodiumTransformer {
 		root.replaceReferenceExpressions(t, "at_tangent", "iris_tangent");
 		tree.parseAndInjectNodes(t, ASTInjectionPoint.BEFORE_FUNCTIONS, "in vec4 iris_qTangent;", "vec4 iris_tangent;", "vec3 iris_Normal;",
 			"""
-					vec3 xAxis( vec4 qQuat )
-					{
-					    float fTy  = 2.0 * qQuat.y;
-					    float fTz  = 2.0 * qQuat.z;
-					    float fTwy = fTy * qQuat.w;
-					    float fTwz = fTz * qQuat.w;
-					    float fTxy = fTy * qQuat.x;
-					    float fTxz = fTz * qQuat.x;
-					    float fTyy = fTy * qQuat.y;
-					    float fTzz = fTz * qQuat.z;
-					    return vec3( 1.0-(fTyy+fTzz), fTxy+fTwz, fTxz-fTwy );
-					}
-				""", """
-					vec3 yAxis( vec4 qQuat )
-				 {
-				     float fTx  = 2.0 * qQuat.x;
-				     float fTy  = 2.0 * qQuat.y;
-				     float fTz  = 2.0 * qQuat.z;
-				     float fTwx = fTx * qQuat.w;
-				     float fTwz = fTz * qQuat.w;
-				     float fTxx = fTx * qQuat.x;
-				     float fTxy = fTy * qQuat.x;
-				     float fTyz = fTz * qQuat.y;
-				     float fTzz = fTz * qQuat.z;
-
-				     return vec3( fTxy-fTwz, 1.0-(fTxx+fTzz), fTyz+fTwx );
-				 }
+				vec3 oct_to_vec3(vec2 e) {
+					vec3 v = vec3(e.xy, 1.0 - abs(e.x) - abs(e.y));
+					float t = max(-v.z, 0.0);
+					v.xy += t * -sign(v.xy);
+					return v;
+				}
 				"""
    			,"""
 			void _tangent_init() {
-				vec4 qtangent = normalize( iris_qTangent ); //Needed because of the quantization caused by 16-bit SNORM
-				iris_Normal = xAxis( qtangent );
-				iris_tangent = vec4(yAxis( qtangent ), sign( iris_qTangent.w ));
+				iris_Normal = oct_to_vec3(iris_qTangent.xy);
+				iris_tangent = vec4(oct_to_vec3(vec2(iris_qTangent.z, abs(iris_qTangent.w) * 2.0 - 1.0)), sign(iris_qTangent.w));
 			}
 			""");
 	}

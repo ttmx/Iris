@@ -2,57 +2,9 @@ package net.coderbot.iris.vertices;
 
 import net.minecraft.util.Mth;
 import org.joml.Math;
-import org.joml.Matrix3f;
-import org.joml.Quaternionf;
 
-public class QTangentCalculator {
-	private Matrix3f tbn = new Matrix3f();
-	private Quaternionf qTangent = new Quaternionf();
-	private void vec_to_oct(int value)
-	{
-		float invL1Norm = 1.0f / (Math.abs(valueX) + Math.abs(valueY) + Math.abs(valueZ));
-		float resX = 0.0f, resY = 0.0f;
-		if (valueZ < 0.0f) {
-			resX = (1.0f - Math.abs(valueY * invL1Norm)) * Mth.sign(valueX);
-			resY = (1.0f - Math.abs(valueX * invL1Norm)) * Mth.sign(valueY);
-		} else {
-			resX = valueX * invL1Norm;
-			resY = valueY * invL1Norm;
-		}
-
-		normalConvX = floatToSnorm8(resX);
-		normalConvY = floatToSnorm8(resY);
-	}
+public class OctahedralCalculator {
 	private static float bias = 1.0f / (2^(8 - 1) - 1);
-
-
-	private void vec_to_tangent(float valueX, float valueY, float valueZ, float valueW) {
-		//encode to octahedron, result in range [-1, 1]
-		float invL1Norm = 1.0f / (Math.abs(valueX) + Math.abs(valueY) + Math.abs(valueZ));
-		float resX = 0.0f, resY = 0.0f;
-		if (valueZ < 0.0f) {
-			resX = (1.0f - Math.abs(valueY * invL1Norm)) * Mth.sign(valueX);
-			resY = (1.0f - Math.abs(valueX * invL1Norm)) * Mth.sign(valueY);
-		} else {
-			resX = valueX * invL1Norm;
-			resY = valueY * invL1Norm;
-		}
-
-		// map y to always be positive
-		resY = resY * 0.5f + 0.5f;
-
-		// add a bias so that y is never 0 (sign in the vertex shader)
-		if (resY < bias)
-			resY = bias;
-
-		// Apply the sign of the binormal to y, which was computed elsewhere
-		if (valueW < 0)
-			resY *= -1;
-
-		tangentX = floatToSnorm8(resX);
-		tangentY = floatToSnorm8(resY);
-	}
-
 
 	private static byte floatToSnorm8( float v )
 	{
@@ -67,7 +19,7 @@ public class QTangentCalculator {
 			127.0f );
 	}
 
-	public int calculateQTangent(boolean flipUpcomingNormal, QuadView q) {
+	public int calculateOctahedralEncode(boolean flipUpcomingNormal, QuadView q) {
 		final float x0;
 		final float y0;
 		final float z0;
@@ -81,34 +33,18 @@ public class QTangentCalculator {
 		final float y3;
 		final float z3;
 
-		// TODO: can tangents also use flipped xyz?
-		if (false) {
-			x0 = q.x(3);
-			y0 = q.y(3);
-			z0 = q.z(3);
-			x1 = q.x(2);
-			y1 = q.y(2);
-			z1 = q.z(2);
-			x2 = q.x(1);
-			y2 = q.y(1);
-			z2 = q.z(1);
-			x3 = q.x(0);
-			y3 = q.y(0);
-			z3 = q.z(0);
-		} else {
-			x0 = q.x(0);
-			y0 = q.y(0);
-			z0 = q.z(0);
-			x1 = q.x(1);
-			y1 = q.y(1);
-			z1 = q.z(1);
-			x2 = q.x(2);
-			y2 = q.y(2);
-			z2 = q.z(2);
-			x3 = q.x(3);
-			y3 = q.y(3);
-			z3 = q.z(3);
-		}
+		x0 = q.x(0);
+		y0 = q.y(0);
+		z0 = q.z(0);
+		x1 = q.x(1);
+		y1 = q.y(1);
+		z1 = q.z(1);
+		x2 = q.x(2);
+		y2 = q.y(2);
+		z2 = q.z(2);
+		x3 = q.x(3);
+		y3 = q.y(3);
+		z3 = q.z(3);
 
 		final float dx0 = x2 - x0;
 		final float dy0 = y2 - y0;
@@ -121,7 +57,7 @@ public class QTangentCalculator {
 		float normY = dz0 * dx1 - dx0 * dz1;
 		float normZ = dx0 * dy1 - dy0 * dx1;
 
-		float l = (float) Math.sqrt(normX * normX + normY * normY + normZ * normZ);
+		float l = Math.sqrt(normX * normX + normY * normY + normZ * normZ);
 
 		if (l != 0) {
 			normX /= l;
@@ -199,36 +135,45 @@ public class QTangentCalculator {
 			tangentW = 1.0F;
 		}
 
-		float invL1Norm = (1.0f) / (Math.abs(normX) + Math.abs(normY) + Math.abs(normZ));
-
-		float octNormX;
-		float octNormY;
-
+		float invL1Norm = 1.0f / (Math.abs(normX) + Math.abs(normY) + Math.abs(normZ));
+		float resX = 0.0f, resY = 0.0f;
 		if (normZ < 0.0f) {
-			octNormX = (1.0f - Math.abs(normY * invL1Norm)) * Math.signum(normX);
-			octNormY = (1.0f - Math.abs(normX * invL1Norm)) * Math.signum(normY);
+			resX = (1.0f - Math.abs(normY * invL1Norm)) * Mth.sign(normX);
+			resY = (1.0f - Math.abs(normX * invL1Norm)) * Mth.sign(normY);
 		} else {
-			octNormX = normX * invL1Norm;
-			octNormY = normY * invL1Norm;
+			resX = normX * invL1Norm;
+			resY = normY * invL1Norm;
 		}
 
-		float invL1Tang = (1.0f) / (Math.abs(tangentx) + Math.abs(tangenty) + Math.abs(tangentz));
+		byte normalConvX = floatToSnorm8(resX);
+		byte normalConvY = floatToSnorm8(resY);
 
-		float octTangX;
-		float octTangY;
-
+		//encode to octahedron, result in range [-1, 1]
+		float invL1Tang = 1.0f / (Math.abs(tangentx) + Math.abs(tangenty) + Math.abs(tangentz));
+		float tanX = 0.0f, tanY = 0.0f;
 		if (tangentz < 0.0f) {
-			octTangX = (1.0f - Math.abs(tangenty * invL1Tang)) * Math.signum(tangentx);
-			octTangY = (1.0f - Math.abs(tangentx * invL1Tang)) * Math.signum(tangenty);
+			tanX = (1.0f - Math.abs(tangenty * invL1Tang)) * Mth.sign(tangentx);
+			tanY = (1.0f - Math.abs(tangentx * invL1Tang)) * Mth.sign(tangenty);
 		} else {
-			octTangX = normX * invL1Tang;
-			octTangY = normY * invL1Tang;
+			tanX = tangentx * invL1Tang;
+			tanY = tangenty * invL1Tang;
 		}
 
-		octTangY = octTangY * 0.5f + 0.5f;
-		octTangY = Math.max(octTangY, bias) * Math.signum(tangentW);
+		// map y to always be positive
+		tanY = tanY * 0.5f + 0.5f;
 
-		return NormI8.pack(octNormX, octNormY, octTangX, octTangY);
+		// add a bias so that y is never 0 (sign in the vertex shader)
+		if (tanY < bias)
+			tanY = bias;
+
+		// Apply the sign of the binormal to y, which was computed elsewhere
+		if (tangentW < 0)
+			tanY *= -1;
+
+		byte convTangX = floatToSnorm8(tanX);
+		byte convTangY = floatToSnorm8(tanY);
+
+		return convTangY << 24 | convTangX << 16 | normalConvY << 8 | normalConvX << 0;
 	}
 
 	private static float rsqrt(float value) {
