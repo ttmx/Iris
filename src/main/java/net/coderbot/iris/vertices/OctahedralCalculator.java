@@ -19,6 +19,10 @@ public class OctahedralCalculator {
 			127.0f );
 	}
 
+	public static int sign(float pDouble0) {
+		return pDouble0 >= 0.0f ? 1 : -1;
+	}
+
 	public int calculateOctahedralEncode(boolean flipUpcomingNormal, QuadView q) {
 		final float x0;
 		final float y0;
@@ -138,8 +142,8 @@ public class OctahedralCalculator {
 		float invL1Norm = 1.0f / (Math.abs(normX) + Math.abs(normY) + Math.abs(normZ));
 		float resX = 0.0f, resY = 0.0f;
 		if (normZ < 0.0f) {
-			resX = (1.0f - Math.abs(normY * invL1Norm)) * Mth.sign(normX);
-			resY = (1.0f - Math.abs(normX * invL1Norm)) * Mth.sign(normY);
+			resX = (1.0f - Math.abs(normY * invL1Norm)) * sign(normX);
+			resY = (1.0f - Math.abs(normX * invL1Norm)) * sign(normY);
 		} else {
 			resX = normX * invL1Norm;
 			resY = normY * invL1Norm;
@@ -152,8 +156,8 @@ public class OctahedralCalculator {
 		float invL1Tang = 1.0f / (Math.abs(tangentx) + Math.abs(tangenty) + Math.abs(tangentz));
 		float tanX = 0.0f, tanY = 0.0f;
 		if (tangentz < 0.0f) {
-			tanX = (1.0f - Math.abs(tangenty * invL1Tang)) * Mth.sign(tangentx);
-			tanY = (1.0f - Math.abs(tangentx * invL1Tang)) * Mth.sign(tangenty);
+			tanX = (1.0f - Math.abs(tangenty * invL1Tang)) * sign(tangentx);
+			tanY = (1.0f - Math.abs(tangentx * invL1Tang)) * sign(tangenty);
 		} else {
 			tanX = tangentx * invL1Tang;
 			tanY = tangenty * invL1Tang;
