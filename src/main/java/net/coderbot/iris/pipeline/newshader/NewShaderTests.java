@@ -49,6 +49,8 @@ public class NewShaderTests {
 		Map<PatchShaderType, String> transformed = TransformPatcher.patchVanilla(
 			source.getVertexSource().orElseThrow(RuntimeException::new),
 			source.getGeometrySource().orElse(null),
+			source.getTCS().orElse(null),
+			source.getTES().orElse(null),
 			source.getFragmentSource().orElseThrow(RuntimeException::new),
 			alpha, isLines, true, inputs, pipeline.getTextureMap());
 		String vertex = transformed.get(PatchShaderType.VERTEX);

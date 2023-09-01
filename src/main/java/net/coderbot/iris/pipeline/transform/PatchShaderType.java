@@ -6,7 +6,9 @@ public enum PatchShaderType {
 	VERTEX(ShaderType.VERTEX, ".vsh"),
 	GEOMETRY(ShaderType.GEOMETRY, ".gsh"),
 	FRAGMENT(ShaderType.FRAGMENT, ".fsh"),
-	COMPUTE(ShaderType.COMPUTE, ".csh");
+	COMPUTE(ShaderType.COMPUTE, ".csh"),
+	TESS_CONTROL(ShaderType.TESSELATION_CONTROL, ".tcs"),
+	TESS_EVAL(ShaderType.TESSELATION_EVAL, ".tes");
 
 	public final ShaderType glShaderType;
 	public final String extension;
@@ -26,6 +28,10 @@ public enum PatchShaderType {
 				return new PatchShaderType[] { COMPUTE };
 			case FRAGMENT:
 				return new PatchShaderType[] { FRAGMENT };
+			case TESSELATION_CONTROL:
+				return new PatchShaderType[] { TESS_CONTROL };
+			case TESSELATION_EVAL:
+				return new PatchShaderType[] { TESS_EVAL };
 			default:
 				throw new IllegalArgumentException("Unknown shader type: " + glShaderType);
 		}

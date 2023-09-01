@@ -299,8 +299,8 @@ public class TransformPatcher {
 		}
 	}
 
-	private static Map<PatchShaderType, String> transform(String vertex, String geometry, String fragment,
-			Parameters parameters) {
+	private static Map<PatchShaderType, String> transform(String vertex, String geometry, String tessControl, String tessEval, String fragment,
+														  Parameters parameters) {
 		// stop if all are null
 		if (vertex == null && geometry == null && fragment == null) {
 			return null;
@@ -322,6 +322,8 @@ public class TransformPatcher {
 			EnumMap<PatchShaderType, String> inputs = new EnumMap<>(PatchShaderType.class);
 			inputs.put(PatchShaderType.VERTEX, vertex);
 			inputs.put(PatchShaderType.GEOMETRY, geometry);
+			inputs.put(PatchShaderType.TESS_CONTROL, tessControl);
+			inputs.put(PatchShaderType.TESS_EVAL, tessEval);
 			inputs.put(PatchShaderType.FRAGMENT, fragment);
 
 			result = transformInternal(inputs, parameters);
@@ -366,25 +368,25 @@ public class TransformPatcher {
 			String vertex, String geometry, String fragment,
 			InputAvailability inputs,
 			Object2ObjectMap<Tri<String, TextureType, TextureStage>, String> textureMap) {
-		return transform(vertex, geometry, fragment,
+		return transform(vertex, geometry, null, null, fragment,
 				new AttributeParameters(Patch.ATTRIBUTES, textureMap, geometry != null, inputs));
 	}
 
 	public static Map<PatchShaderType, String> patchVanilla(
-			String vertex, String geometry, String fragment,
+			String vertex, String geometry, String tessControl, String tessEval, String fragment,
 			AlphaTest alpha, boolean isLines,
 			boolean hasChunkOffset,
 			ShaderAttributeInputs inputs,
 			Object2ObjectMap<Tri<String, TextureType, TextureStage>, String> textureMap) {
-		return transform(vertex, geometry, fragment,
+		return transform(vertex, geometry, tessControl, tessEval, fragment,
 				new VanillaParameters(Patch.VANILLA, textureMap, alpha, isLines, hasChunkOffset, inputs, geometry != null));
 	}
 
-	public static Map<PatchShaderType, String> patchSodium(String vertex, String geometry, String fragment,
+	public static Map<PatchShaderType, String> patchSodium(String vertex, String geometry, String tessControl, String tessEval, String fragment,
 			AlphaTest alpha, ShaderAttributeInputs inputs,
 			float positionScale, float positionOffset, float textureScale,
 			Object2ObjectMap<Tri<String, TextureType, TextureStage>, String> textureMap) {
-		return transform(vertex, geometry, fragment,
+		return transform(vertex, geometry, tessControl, tessEval, fragment,
 				new SodiumParameters(Patch.SODIUM, textureMap, alpha, inputs, positionScale, positionOffset,
 						textureScale));
 	}
@@ -393,7 +395,7 @@ public class TransformPatcher {
 			String vertex, String geometry, String fragment,
 			TextureStage stage,
 			Object2ObjectMap<Tri<String, TextureType, TextureStage>, String> textureMap) {
-		return transform(vertex, geometry, fragment, new TextureStageParameters(Patch.COMPOSITE, stage, textureMap));
+		return transform(vertex, geometry, null, null, fragment, new TextureStageParameters(Patch.COMPOSITE, stage, textureMap));
 	}
 
 	public static String patchCompute(

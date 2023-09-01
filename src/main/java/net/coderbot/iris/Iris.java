@@ -199,7 +199,7 @@ public class Iris {
 			return;
 		}
 
-		GL43C.glPatchParameteri(GL43C.GL_PATCH_VERTICES, 4);
+		GL43C.glPatchParameteri(GL43C.GL_PATCH_VERTICES, 3);
 
 		PBRTextureManager.INSTANCE.init();
 

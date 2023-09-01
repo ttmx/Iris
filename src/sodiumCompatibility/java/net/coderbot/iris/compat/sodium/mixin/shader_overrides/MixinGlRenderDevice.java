@@ -7,7 +7,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
-@Mixin(targets = "me.jellysquid.mods.sodium.client.gl.device.GLRenderDevice.ImmediateDrawCommandList", remap = false)
+@Mixin(targets = "me.jellysquid.mods.sodium.client.gl.device.GLRenderDevice$ImmediateDrawCommandList", remap = false)
 public class MixinGlRenderDevice {
 	@Redirect(method = "multiDrawElementsBaseVertex", at = @At(value = "INVOKE", target = "Lme/jellysquid/mods/sodium/client/gl/tessellation/GlPrimitiveType;getId()I"))
 	private int replaceId(GlPrimitiveType instance) {

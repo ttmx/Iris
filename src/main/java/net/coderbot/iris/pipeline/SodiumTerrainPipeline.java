@@ -47,6 +47,8 @@ public class SodiumTerrainPipeline {
 	List<BufferBlendOverride> terrainSolidBufferOverrides;
 
 	Optional<String> terrainCutoutVertex;
+	Optional<String> terrainCutoutTCSSource;
+	Optional<String> terrainCutoutTESSource;
 	Optional<String> terrainCutoutGeometry;
 
 	Optional<String> translucentTCSSource;
@@ -155,13 +157,15 @@ public class SodiumTerrainPipeline {
 			Map<PatchShaderType, String> transformed = TransformPatcher.patchSodium(
 				sources.getVertexSource().orElse(null),
 				sources.getGeometrySource().orElse(null),
+				sources.getTES().orElse(null),
+				sources.getTCS().orElse(null),
 				sources.getFragmentSource().orElse(null),
 				AlphaTest.ALWAYS, inputs,
 				vertexType.getPositionScale(), vertexType.getPositionOffset(), vertexType.getTextureScale(), parent.getTextureMap());
 			terrainSolidVertex = Optional.ofNullable(transformed.get(PatchShaderType.VERTEX));
 			terrainSolidGeometry = Optional.ofNullable(transformed.get(PatchShaderType.GEOMETRY));
-			terrainTESSource = sources.getTES();
-			terrainTCSSource = sources.getTCS();
+			terrainTESSource = Optional.ofNullable(transformed.get(PatchShaderType.TESS_EVAL));
+			terrainTCSSource = Optional.ofNullable(transformed.get(PatchShaderType.TESS_CONTROL));
 			terrainSolidFragment = Optional.ofNullable(transformed.get(PatchShaderType.FRAGMENT));
 
 			ShaderPrinter.printProgram(sources.getName() + "_sodium_solid").addSources(transformed).print();
@@ -189,11 +193,15 @@ public class SodiumTerrainPipeline {
 			Map<PatchShaderType, String> transformed = TransformPatcher.patchSodium(
 				sources.getVertexSource().orElse(null),
 				sources.getGeometrySource().orElse(null),
+				sources.getTES().orElse(null),
+				sources.getTCS().orElse(null),
 				sources.getFragmentSource().orElse(null),
 				terrainCutoutAlpha.orElse(AlphaTests.ONE_TENTH_ALPHA), inputs,
 				vertexType.getPositionScale(), vertexType.getPositionOffset(), vertexType.getTextureScale(), parent.getTextureMap());
 			terrainCutoutVertex = Optional.ofNullable(transformed.get(PatchShaderType.VERTEX));
 			terrainCutoutGeometry = Optional.ofNullable(transformed.get(PatchShaderType.GEOMETRY));
+			terrainCutoutTESSource = Optional.ofNullable(transformed.get(PatchShaderType.TESS_EVAL));
+			terrainCutoutTCSSource = Optional.ofNullable(transformed.get(PatchShaderType.TESS_CONTROL));
 			terrainCutoutFragment = Optional.ofNullable(transformed.get(PatchShaderType.FRAGMENT));
 
 			ShaderPrinter.printProgram(sources.getName() + "_sodium_cutout").addSources(transformed).print();
@@ -203,6 +211,8 @@ public class SodiumTerrainPipeline {
 			terrainCutoutAlpha = terrainCutoutDefault.get();
 			terrainCutoutVertex = Optional.empty();
 			terrainCutoutGeometry = Optional.empty();
+			terrainCutoutTESSource = Optional.empty();
+			terrainCutoutTCSSource = Optional.empty();
 			terrainCutoutFragment = Optional.empty();
 		});
 
@@ -221,14 +231,16 @@ public class SodiumTerrainPipeline {
 			Map<PatchShaderType, String> transformed = TransformPatcher.patchSodium(
 				sources.getVertexSource().orElse(null),
 				sources.getGeometrySource().orElse(null),
+				sources.getTES().orElse(null),
+				sources.getTCS().orElse(null),
 				sources.getFragmentSource().orElse(null),
 				translucentAlpha.orElse(AlphaTest.ALWAYS), inputs,
 				vertexType.getPositionScale(), vertexType.getPositionOffset(), vertexType.getTextureScale(), parent.getTextureMap());
 			translucentVertex = Optional.ofNullable(transformed.get(PatchShaderType.VERTEX));
 			translucentGeometry = Optional.ofNullable(transformed.get(PatchShaderType.GEOMETRY));
 			translucentFragment = Optional.ofNullable(transformed.get(PatchShaderType.FRAGMENT));
-			translucentTESSource = sources.getTES();
-			translucentTCSSource = sources.getTCS();
+			translucentTESSource = Optional.ofNullable(transformed.get(PatchShaderType.TESS_EVAL));
+			translucentTCSSource = Optional.ofNullable(transformed.get(PatchShaderType.TESS_CONTROL));
 			ShaderPrinter.printProgram(sources.getName() + "_sodium").addSources(transformed).print();
 		}, () -> {
 			translucentBlendOverride = null;
@@ -255,12 +267,16 @@ public class SodiumTerrainPipeline {
 			Map<PatchShaderType, String> transformed = TransformPatcher.patchSodium(
 				sources.getVertexSource().orElse(null),
 				sources.getGeometrySource().orElse(null),
+				sources.getTES().orElse(null),
+				sources.getTCS().orElse(null),
 				sources.getFragmentSource().orElse(null),
 				AlphaTest.ALWAYS, inputs,
 				vertexType.getPositionScale(), vertexType.getPositionOffset(), vertexType.getTextureScale(), parent.getTextureMap());
 			Map<PatchShaderType, String> transformedCutout = TransformPatcher.patchSodium(
 				sources.getVertexSource().orElse(null),
 				sources.getGeometrySource().orElse(null),
+				sources.getTES().orElse(null),
+				sources.getTCS().orElse(null),
 				sources.getFragmentSource().orElse(null),
 				shadowAlpha.get(), inputs,
 				vertexType.getPositionScale(), vertexType.getPositionOffset(), vertexType.getTextureScale(), parent.getTextureMap());
@@ -268,8 +284,8 @@ public class SodiumTerrainPipeline {
 			shadowGeometry = Optional.ofNullable(transformed.get(PatchShaderType.GEOMETRY));
 			shadowCutoutFragment = Optional.ofNullable(transformedCutout.get(PatchShaderType.FRAGMENT));
 			shadowFragment = Optional.ofNullable(transformed.get(PatchShaderType.FRAGMENT));
-			shadowTESSource = sources.getTES();
-			shadowTCSSource = sources.getTCS();
+			shadowTESSource = Optional.ofNullable(transformedCutout.get(PatchShaderType.TESS_EVAL));
+			shadowTCSSource = Optional.ofNullable(transformedCutout.get(PatchShaderType.TESS_CONTROL));
 			ShaderPrinter.printProgram(sources.getName() + "_sodium")
 				.addSources(transformed)
 				.setName(sources.getName() + "_sodium_cutout")
