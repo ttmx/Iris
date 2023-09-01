@@ -55,6 +55,8 @@ public class NewShaderTests {
 			alpha, isLines, true, inputs, pipeline.getTextureMap());
 		String vertex = transformed.get(PatchShaderType.VERTEX);
 		String geometry = transformed.get(PatchShaderType.GEOMETRY);
+		String tessControl = transformed.get(PatchShaderType.TESS_CONTROL);
+		String tessEval = transformed.get(PatchShaderType.TESS_EVAL);
 		String fragment = transformed.get(PatchShaderType.FRAGMENT);
 
 		StringBuilder shaderJson = new StringBuilder("{\n" +
@@ -92,7 +94,7 @@ public class NewShaderTests {
 
 		ShaderPrinter.printProgram(name).addSources(transformed).addJson(shaderJsonString).print();
 
-		ResourceProvider shaderResourceFactory = new IrisProgramResourceFactory(shaderJsonString, vertex, geometry, fragment);
+		ResourceProvider shaderResourceFactory = new IrisProgramResourceFactory(shaderJsonString, vertex, tessControl, tessEval, geometry, fragment);
 
 		List<BufferBlendOverride> overrides = new ArrayList<>();
 		source.getDirectives().getBufferBlendOverrides().forEach(information -> {
@@ -111,7 +113,7 @@ public class NewShaderTests {
 			VanillaUniforms.addVanillaUniforms(uniforms);
 		}, (samplerHolder, imageHolder) -> {
 			parent.addGbufferOrShadowSamplers(samplerHolder, imageHolder, flipped, isShadowPass, inputs.toAvailability());
-		}, isIntensity, parent, inputs, overrides, customUniforms);
+		}, isIntensity, parent, inputs, overrides, customUniforms, tessEval != null && tessControl != null);
 	}
 
 	public static FallbackShader createFallback(String name, GlFramebuffer writingToBeforeTranslucent,
@@ -168,7 +170,7 @@ public class NewShaderTests {
 			.addJson(shaderJsonString)
 			.print();
 
-		ResourceProvider shaderResourceFactory = new IrisProgramResourceFactory(shaderJsonString, vertex, null, fragment);
+		ResourceProvider shaderResourceFactory = new IrisProgramResourceFactory(shaderJsonString, vertex, null, null, null, fragment);
 
 		return new FallbackShader(shaderResourceFactory, name, vertexFormat, writingToBeforeTranslucent,
 			writingToAfterTranslucent, blendModeOverride, alpha.getReference(), parent);
@@ -177,12 +179,16 @@ public class NewShaderTests {
 	private static class IrisProgramResourceFactory implements ResourceProvider {
 		private final String json;
 		private final String vertex;
+		private final String tessControl;
+		private final String tessEval;
 		private final String geometry;
 		private final String fragment;
 
-		public IrisProgramResourceFactory(String json, String vertex, String geometry, String fragment) {
+		public IrisProgramResourceFactory(String json, String vertex, String tessControl, String tessEval, String geometry, String fragment) {
 			this.json = json;
 			this.vertex = vertex;
+			this.tessControl = tessControl;
+			this.tessEval = tessEval;
 			this.geometry = geometry;
 			this.fragment = fragment;
 		}
@@ -200,6 +206,16 @@ public class NewShaderTests {
 					return null;
 				}
 				return new StringResource(id, geometry);
+			} else if (path.endsWith("tcs")) {
+				if (tessControl == null) {
+					return null;
+				}
+				return new StringResource(id, tessControl);
+			} else if (path.endsWith("tes")) {
+				if (tessEval == null) {
+					return null;
+				}
+				return new StringResource(id, tessEval);
 			} else if (path.endsWith("fsh")) {
 				return new StringResource(id, fragment);
 			}

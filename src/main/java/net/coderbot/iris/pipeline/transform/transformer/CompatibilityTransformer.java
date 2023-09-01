@@ -477,6 +477,15 @@ public class CompatibilityTransformer {
 												+ " has a non-numeric type and could not be compatibility-patched. See debugging.md for more information.");
 								continue;
 							}
+
+							if (prevType == ShaderType.TESSELATION_CONTROL || prevType == ShaderType.TESSELATION_EVAL) {
+								LOGGER.warn(
+										"The in declaration '" + name + "' in the " + currentType.glShaderType.name()
+												+ " shader that has a missing corresponding out declaration in the previous stage "
+												+ prevType.name()
+												+ " has a missing out declaration, but we're not compatibility patching since this is the tessellation shader.");
+								continue;
+							}
 							Type inType = inTypeSpecifier.type;
 
 							// insert the new out declaration but copy over the type qualifiers, except for

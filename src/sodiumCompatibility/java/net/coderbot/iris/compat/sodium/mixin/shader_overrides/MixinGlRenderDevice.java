@@ -11,7 +11,7 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 public class MixinGlRenderDevice {
 	@Redirect(method = "multiDrawElementsBaseVertex", at = @At(value = "INVOKE", target = "Lme/jellysquid/mods/sodium/client/gl/tessellation/GlPrimitiveType;getId()I"))
 	private int replaceId(GlPrimitiveType instance) {
-		if (ImmediateState.ISTESS) return GL43C.GL_PATCHES;
+		if (ImmediateState.usingTessellation) return GL43C.GL_PATCHES;
 
 		return instance.getId();
 	}

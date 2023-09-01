@@ -157,8 +157,8 @@ public class SodiumTerrainPipeline {
 			Map<PatchShaderType, String> transformed = TransformPatcher.patchSodium(
 				sources.getVertexSource().orElse(null),
 				sources.getGeometrySource().orElse(null),
-				sources.getTES().orElse(null),
 				sources.getTCS().orElse(null),
+				sources.getTES().orElse(null),
 				sources.getFragmentSource().orElse(null),
 				AlphaTest.ALWAYS, inputs,
 				vertexType.getPositionScale(), vertexType.getPositionOffset(), vertexType.getTextureScale(), parent.getTextureMap());
@@ -193,8 +193,8 @@ public class SodiumTerrainPipeline {
 			Map<PatchShaderType, String> transformed = TransformPatcher.patchSodium(
 				sources.getVertexSource().orElse(null),
 				sources.getGeometrySource().orElse(null),
-				sources.getTES().orElse(null),
 				sources.getTCS().orElse(null),
+				sources.getTES().orElse(null),
 				sources.getFragmentSource().orElse(null),
 				terrainCutoutAlpha.orElse(AlphaTests.ONE_TENTH_ALPHA), inputs,
 				vertexType.getPositionScale(), vertexType.getPositionOffset(), vertexType.getTextureScale(), parent.getTextureMap());
@@ -231,8 +231,8 @@ public class SodiumTerrainPipeline {
 			Map<PatchShaderType, String> transformed = TransformPatcher.patchSodium(
 				sources.getVertexSource().orElse(null),
 				sources.getGeometrySource().orElse(null),
-				sources.getTES().orElse(null),
 				sources.getTCS().orElse(null),
+				sources.getTES().orElse(null),
 				sources.getFragmentSource().orElse(null),
 				translucentAlpha.orElse(AlphaTest.ALWAYS), inputs,
 				vertexType.getPositionScale(), vertexType.getPositionOffset(), vertexType.getTextureScale(), parent.getTextureMap());
@@ -267,16 +267,16 @@ public class SodiumTerrainPipeline {
 			Map<PatchShaderType, String> transformed = TransformPatcher.patchSodium(
 				sources.getVertexSource().orElse(null),
 				sources.getGeometrySource().orElse(null),
-				sources.getTES().orElse(null),
 				sources.getTCS().orElse(null),
+				sources.getTES().orElse(null),
 				sources.getFragmentSource().orElse(null),
 				AlphaTest.ALWAYS, inputs,
 				vertexType.getPositionScale(), vertexType.getPositionOffset(), vertexType.getTextureScale(), parent.getTextureMap());
 			Map<PatchShaderType, String> transformedCutout = TransformPatcher.patchSodium(
 				sources.getVertexSource().orElse(null),
 				sources.getGeometrySource().orElse(null),
-				sources.getTES().orElse(null),
 				sources.getTCS().orElse(null),
+				sources.getTES().orElse(null),
 				sources.getFragmentSource().orElse(null),
 				shadowAlpha.get(), inputs,
 				vertexType.getPositionScale(), vertexType.getPositionOffset(), vertexType.getTextureScale(), parent.getTextureMap());

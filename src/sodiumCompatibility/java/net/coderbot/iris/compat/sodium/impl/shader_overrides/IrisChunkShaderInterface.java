@@ -90,7 +90,7 @@ public class IrisChunkShaderInterface {
 			blendModeOverride.apply();
 		}
 
-		ImmediateState.ISTESS = isTess;
+		ImmediateState.usingTessellation = isTess;
 
 		if (hasOverrides) {
 			bufferBlendOverrides.forEach(BufferBlendOverride::apply);
@@ -107,7 +107,7 @@ public class IrisChunkShaderInterface {
 	}
 
 	public void restore() {
-		ImmediateState.ISTESS = false;
+		ImmediateState.usingTessellation = false;
 
 		if (blendModeOverride != null || hasOverrides) {
 			BlendModeOverride.restore();
